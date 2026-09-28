@@ -1,0 +1,1389 @@
+<title>LTT Machine Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --bg:#EDF0EF; --surface:#FFFFFF; --surface-2:#F5F7F6; --ink:#15201C; --ink-2:#3B4743; --muted:#63706B;
+  --line:#C6CFCB; --line-soft:#DCE2DF;
+  --accent:#0A6C7D; --accent-soft:#DCECEF;
+  --warm:#955800; --warm-soft:#F4E5CA;
+  --bad:#A8322A; --bad-soft:#F6DEDB;
+  --code-bg:#F2F5F4;
+  --sans:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --cond:"IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", Consolas, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1513; --surface:#172020; --surface-2:#1B2523; --ink:#E3EAE7; --ink-2:#BAC6C1; --muted:#8C9A95;
+    --line:#34423E; --line-soft:#26312E;
+    --accent:#5CC2D2; --accent-soft:#143339;
+    --warm:#E5A54B; --warm-soft:#3A2C15;
+    --bad:#F07A6E; --bad-soft:#3D1D1A;
+    --code-bg:#131B19;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1513; --surface:#172020; --surface-2:#1B2523; --ink:#E3EAE7; --ink-2:#BAC6C1; --muted:#8C9A95;
+  --line:#34423E; --line-soft:#26312E;
+  --accent:#5CC2D2; --accent-soft:#143339;
+  --warm:#E5A54B; --warm-soft:#3A2C15;
+  --bad:#F07A6E; --bad-soft:#3D1D1A;
+  --code-bg:#131B19;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.6; padding-inline:20px; padding-block:0 64px}
+.wrap{max-width:1040px; margin:0 auto}
+.prose{max-width:70ch}
+h1,h2,h3{font-family:var(--cond); text-wrap:balance; line-height:1.15; margin:0}
+h1{font-size:clamp(34px,5vw,50px); font-weight:700; letter-spacing:-.01em}
+h2{font-size:30px; font-weight:600; margin-bottom:14px}
+h3{font-size:20px; font-weight:600; margin:28px 0 8px}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
+code{font-family:var(--mono); font-size:.86em; background:var(--code-bg); border:1px solid var(--line-soft); border-radius:3px; padding:0 .3em}
+strong,b{font-weight:600}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+
+header.top{padding-block:48px 28px; border-bottom:1px solid var(--line); margin-bottom:8px}
+header.top .eyebrow{margin-bottom:14px}
+.lede{font-size:19px; line-height:1.55; color:var(--ink-2); max-width:62ch; margin-top:16px}
+
+.glance{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:28px}
+.glance div{background:var(--surface); padding:14px 16px}
+.glance dt{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.glance dd{margin:4px 0 0; font-family:var(--cond); font-size:20px; font-weight:600; line-height:1.25}
+.glance dd small{display:block; font-family:var(--sans); font-size:13px; font-weight:400; color:var(--muted)}
+
+nav.toc{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding-block:10px; margin-bottom:12px}
+nav.toc ul{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 18px}
+nav.toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink-2); text-decoration:none}
+nav.toc a:hover{color:var(--accent); text-decoration:underline}
+
+section.part{padding-block:56px 8px}
+section.part + section.part{border-top:2px solid var(--line)}
+.part-head{margin-bottom:8px}
+.part-no{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+.part-head h2{font-size:38px; font-weight:700; margin-bottom:8px}
+.part-head p{color:var(--muted); max-width:70ch; margin:0}
+.sub{padding-top:36px}
+.sub + .sub{border-top:1px solid var(--line-soft); margin-top:32px}
+.sub > h3{font-size:27px; font-weight:600; margin:0 0 14px}
+.sub > h3 .num{font-family:var(--mono); font-size:15px; font-weight:500; color:var(--muted); margin-right:12px; vertical-align:3px}
+h4{font-family:var(--cond); font-size:20px; font-weight:600; line-height:1.2; margin:28px 0 8px; text-wrap:balance}
+.contents{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:24px 0 8px}
+.contents > div{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:14px 16px}
+.contents .c-part{font-family:var(--cond); font-size:18px; font-weight:600; color:var(--ink); text-decoration:none}
+.contents .c-part span{font-family:var(--mono); font-size:13px; color:var(--accent); margin-right:4px}
+.contents ul{list-style:none; margin:8px 0 0; padding:0}
+.contents li{font-size:14px; margin-bottom:3px}
+.contents li a{color:var(--ink-2); text-decoration:none}
+.contents a:hover{color:var(--accent); text-decoration:underline}
+
+figure{margin:22px 0 26px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:18px 18px 14px}
+.fig-scroll{overflow-x:auto}
+.fig-scroll svg{display:block; width:100%; height:auto; min-width:720px}
+figcaption{font-size:14px; color:var(--muted); margin-top:12px; max-width:80ch; line-height:1.5}
+figcaption b{color:var(--ink-2); font-weight:600}
+
+.dg{color:var(--ink-2); font-family:var(--sans)}
+.dg text{fill:var(--ink)}
+.dg .t{font-size:15px; font-weight:600; font-family:var(--cond)}
+.dg .s{font-size:12px; fill:var(--muted)}
+.dg .m{font-size:11.5px; font-family:var(--mono); fill:var(--ink-2)}
+.dg .n{font-size:12px; fill:var(--ink)}
+.dg .box{fill:var(--surface); stroke:var(--line); stroke-width:1.2}
+.dg .box-2{fill:var(--surface-2); stroke:var(--line); stroke-width:1.2}
+.dg .front{fill:var(--warm-soft); stroke:var(--warm); stroke-width:1.2}
+.dg .back{fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.2}
+.dg .alarm{fill:var(--bad-soft); stroke:var(--bad); stroke-width:1.2}
+.dg .lane-front{fill:var(--warm-soft); opacity:.55}
+.dg .lane{fill:var(--surface-2)}
+.dg .ln{stroke:var(--ink-2); stroke-width:1.5; fill:none}
+.dg .ln-warm{stroke:var(--warm); stroke-width:1.6; fill:none}
+.dg .ln-faint{stroke:var(--line); stroke-width:1; fill:none}
+.dg .dash{stroke-dasharray:5 4}
+.dg .ah{fill:var(--ink-2)}
+.dg .ah-warm{fill:var(--warm)}
+.dg .tw{fill:var(--warm); font-weight:600}
+.dg .ta{fill:var(--accent); font-weight:600}
+.dg .tb{fill:var(--bad)}
+
+table{border-collapse:collapse; width:100%; font-size:14.5px; line-height:1.45}
+.tbl{overflow-x:auto; margin:16px 0 22px; border:1px solid var(--line); border-radius:6px; background:var(--surface)}
+.tbl table{min-width:640px}
+th,td{text-align:left; vertical-align:top; padding:9px 12px; border-bottom:1px solid var(--line-soft)}
+th{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+td.proj{font-family:var(--mono); font-size:13px; white-space:nowrap}
+td ul{margin:4px 0 0; padding-left:18px}
+td li{margin-bottom:2px}
+.tag{display:inline-block; font-family:var(--mono); font-size:11px; padding:1px 6px; border-radius:3px; border:1px solid var(--line); color:var(--muted); white-space:nowrap}
+.tag.new{border-color:var(--accent); color:var(--accent)}
+
+pre{font-family:var(--mono); font-size:13px; line-height:1.55; background:var(--code-bg); border:1px solid var(--line); border-radius:6px; padding:14px 16px; overflow-x:auto; margin:14px 0 20px; color:var(--ink)}
+pre .c{color:var(--muted)}
+pre .k{color:var(--accent)}
+.codehead{font-family:var(--mono); font-size:12px; color:var(--muted); margin:18px 0 -8px}
+
+.rules{list-style:none; padding:0; margin:14px 0 22px; display:grid; gap:0; border:1px solid var(--line); border-radius:6px; background:var(--surface); counter-reset:r}
+.rules li{counter-increment:r; display:grid; grid-template-columns:44px 1fr; gap:4px 12px; padding:12px 16px 12px 10px; border-bottom:1px solid var(--line-soft)}
+.rules li:last-child{border-bottom:0}
+.rules li::before{content:"R" counter(r); font-family:var(--mono); font-size:12px; color:var(--accent); padding-top:3px; text-align:right}
+.rules .why{grid-column:2; font-size:14px; color:var(--muted)}
+.rules.warm li::before{content:"T" counter(r); color:var(--warm)}
+.rules.ev li::before{content:"E" counter(r)}
+.rules.gr li::before{content:"G" counter(r)}
+.rules.dec li::before{content:"D" counter(r)}
+.rules.open li::before{content:"O" counter(r); color:var(--warm)}
+.rules.lg li::before{content:"L" counter(r)}
+
+.steps{list-style:none; padding:0; margin:16px 0; counter-reset:s; display:grid; gap:10px}
+.steps li{counter-increment:s; display:grid; grid-template-columns:40px 1fr; gap:2px 14px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:14px 16px}
+.steps li::before{content:counter(s); grid-row:span 3; font-family:var(--cond); font-size:28px; font-weight:700; color:var(--accent); line-height:1}
+.steps .h{font-weight:600}
+.steps .meta{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.steps p{margin:4px 0 0; font-size:15px}
+
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin:16px 0}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 18px}
+.panel h4{margin-top:0}
+.panel ul{margin:6px 0 0; padding-left:18px}
+.panel li{margin-bottom:4px}
+.bul{margin:10px 0 18px; padding-left:20px; max-width:74ch}
+.bul li{margin-bottom:8px}
+.callout{border-left:3px solid var(--accent); background:var(--surface); padding:12px 16px; margin:18px 0 0; border-radius:0 6px 6px 0}
+.callout p:last-child{margin-bottom:0}
+.callout.warm{border-left-color:var(--warm)}
+
+footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:var(--muted)}
+
+@media (max-width:560px){
+  body{font-size:15.5px}
+  .part-head h2{font-size:30px}
+  .sub > h3{font-size:23px}
+  .lede{font-size:17px}
+  .rules li{grid-template-columns:34px 1fr}
+}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Software architecture · LTT machine software · v3.6 · 28 Sep 2026</div>
+  <h1>LTT Machine Architecture</h1>
+  <p class="lede">The reference architecture for LTT machine control software. It defines four layers, what each one is responsible for, and the rules that keep every machine testable, maintainable and ready for WPF.</p>
+
+  <dl class="glance">
+    <div><dt>Layers</dt><dd>4<small>views · view models · core · platform and drivers</small></dd></div>
+    <div><dt>UI pattern</dt><dd>MVVM<small>the same view models serve WinForms and WPF</small></dd></div>
+    <div><dt>Container</dt><dd>MS.Extensions.DI<small>runs on .NET Framework 4.7.2 and later</small></dd></div>
+    <div><dt>Thread rule</dt><dd>UI never waits<small>Core never marshals</small></dd></div>
+    <div><dt>Stack</dt><dd>C# 12 · Serilog<small>.NET Framework hosts, .NET Standard libraries</small></dd></div>
+  </dl>
+  <div class="callout">
+    <p><strong>Scope.</strong> This document applies to every LTT machine application. How a particular machine adopts it, and the state of that machine's code today, belong in that machine's own documents. Names in angle brackets, such as <code>&lt;Machine&gt;</code>, stand for the machine's own name.</p>
+  </div>
+</header>
+
+<div class="contents" aria-label="Contents">
+  <div><a class="c-part" href="#part-overview"><span>1</span> Overview</a><ul>
+    <li><a href="#overview">1.1 The layers</a></li>
+    <li><a href="#responsibilities">1.2 Responsibilities</a></li>
+    <li><a href="#assemblies">1.3 Assemblies and dependencies</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-layers"><span>2</span> Layers</a><ul>
+    <li><a href="#views">2.1 Views</a></li>
+    <li><a href="#viewmodels">2.2 View models</a></li>
+    <li><a href="#core">2.3 Core: machine and operations</a></li>
+    <li><a href="#platform">2.4 Platform</a></li>
+    <li><a href="#drivers">2.5 Drivers and simulation</a></li>
+    <li><a href="#composition">2.6 Composition root</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-crosscutting"><span>3</span> Cross-cutting concerns</a><ul>
+    <li><a href="#threads">3.1 Threading</a></li>
+    <li><a href="#events">3.2 Events and machine state</a></li>
+    <li><a href="#errors">3.3 Errors, alarms and safe state</a></li>
+    <li><a href="#data">3.4 Data and configuration</a></li>
+    <li><a href="#diagnostics">3.5 Logging and traceability</a></li>
+    <li><a href="#crashes">3.6 Exceptions, crashes and hangs</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-quality"><span>4</span> Quality</a><ul>
+    <li><a href="#testing">4.1 Testing</a></li>
+    <li><a href="#guards">4.2 Guard rails</a></li>
+    <li><a href="#maintain">4.3 Maintenance and versioning</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-evolution"><span>5</span> Evolution</a><ul>
+    <li><a href="#newmachine">5.1 Building a new machine</a></li>
+    <li><a href="#wpf">5.2 The WPF path</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-decisions"><span>6</span> History</a><ul>
+    <li><a href="#history">6.1 Revisions</a></li>
+  </ul></div>
+</div>
+
+<nav class="toc" aria-label="Sections">
+  <ul>
+    <li><a href="#part-overview">1 · Overview</a></li>
+    <li><a href="#part-layers">2 · Layers</a></li>
+    <li><a href="#part-crosscutting">3 · Cross-cutting concerns</a></li>
+    <li><a href="#part-quality">4 · Quality</a></li>
+    <li><a href="#part-evolution">5 · Evolution</a></li>
+    <li><a href="#part-decisions">6 · History</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================ -->
+<section class="part" id="part-overview">
+  <div class="part-head"><span class="part-no">Part 1</span><h2>Overview</h2><p>What the four layers are and how they depend on each other.</p></div>
+
+  <div class="sub" id="overview">
+  <h3><span class="num">1.1</span>The layers</h3>
+  <p class="prose">There are four layers, and dependencies point down only. The composition root is the only code that knows every layer, and it chooses which implementation goes behind each interface.</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 580" role="img" aria-label="Layer diagram. Views bind to view models. View models await operations in Core, and Core sends events back up on the UI thread. Core uses device contracts in the Platform, which the drivers implement. A composition root on the right registers every layer. A dashed line between view models and Core separates the front end, which runs on the UI thread, from the back end, which runs on any thread.">
+      <defs>
+        <marker id="d1-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d1-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+
+      <rect class="front" x="40" y="30" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="60">Views</text>
+      <text class="s" x="60" y="84">Forms and user controls: layout and bindings, no logic</text>
+      <text class="m" x="664" y="60" text-anchor="end">&lt;Machine&gt;.exe</text>
+      <text class="m" x="664" y="84" text-anchor="end">+ LTT.UI.WinForms (shared)</text>
+
+      <rect class="front" x="40" y="130" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="160">View models</text>
+      <text class="s" x="60" y="184">Screen state and commands, with no WinForms or WPF types</text>
+      <text class="m" x="664" y="160" text-anchor="end">LTT.&lt;Machine&gt;.Presentation</text>
+
+      <line class="ln-faint dash" x1="40" y1="226" x2="680" y2="226"/>
+      <text class="s tw" x="680" y="219" text-anchor="end">▲ front end · UI thread</text>
+      <text class="s ta" x="680" y="242" text-anchor="end">▼ back end · any thread</text>
+
+      <rect class="back" x="40" y="250" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="280">Machine and operations</text>
+      <text class="s" x="60" y="304">Machine model, operations, state machines, alarms, storage</text>
+      <text class="m" x="664" y="280" text-anchor="end">LTT.&lt;Machine&gt;.Core</text>
+
+      <rect class="box" x="40" y="350" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="380">Platform</text>
+      <text class="s" x="60" y="404">Device contracts and threading, event bus, commands, localization</text>
+      <text class="m" x="664" y="380" text-anchor="end">LTT.Platform</text>
+
+      <rect class="box" x="40" y="450" width="640" height="100" rx="5"/>
+      <text class="t" x="60" y="476">Drivers</text>
+      <text class="m" x="664" y="476" text-anchor="end">LTT.Hardware.*</text>
+      <rect class="box-2" x="60"  y="490" width="80" height="42" rx="3"/><text class="m" x="100" y="515" text-anchor="middle">Aerotech</text>
+      <rect class="box-2" x="148" y="490" width="80" height="42" rx="3"/><text class="m" x="188" y="515" text-anchor="middle">Googol</text>
+      <rect class="box-2" x="236" y="490" width="80" height="42" rx="3"/><text class="m" x="276" y="515" text-anchor="middle">Basler</text>
+      <rect class="box-2" x="324" y="490" width="80" height="42" rx="3"/><text class="m" x="364" y="515" text-anchor="middle">Aisys</text>
+      <rect class="box-2" x="412" y="490" width="80" height="42" rx="3"/><text class="m" x="452" y="515" text-anchor="middle">MarkingMate</text>
+      <rect class="box-2" x="500" y="490" width="80" height="42" rx="3"/><text class="m" x="540" y="515" text-anchor="middle">Protocols</text>
+      <rect class="box-2 dash" x="588" y="490" width="80" height="42" rx="3"/><text class="m" x="628" y="515" text-anchor="middle">Simulation</text>
+
+      <line class="ln" x1="150" y1="102" x2="150" y2="128" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="120">binds to</text>
+      <line class="ln-warm dash" x1="340" y1="130" x2="340" y2="104" marker-end="url(#d1-aw)"/>
+      <text class="s" x="350" y="120">property changed</text>
+      <line class="ln" x1="150" y1="202" x2="150" y2="248" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="214">awaits operations</text>
+      <line class="ln-warm dash" x1="340" y1="250" x2="340" y2="204" marker-end="url(#d1-aw)"/>
+      <text class="s" x="350" y="214">events on the UI thread</text>
+      <line class="ln" x1="150" y1="322" x2="150" y2="348" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="340">uses contracts</text>
+      <line class="ln" x1="340" y1="450" x2="340" y2="424" marker-end="url(#d1-ah)"/>
+      <text class="s" x="350" y="441">implement contracts</text>
+
+      <rect class="box" x="720" y="30" width="220" height="520" rx="5"/>
+      <text class="t" x="740" y="60">Composition root</text>
+      <text class="m" x="740" y="82">Program.cs + Composition/</text>
+      <text class="s" x="740" y="118">Reads Hardware.ini and</text>
+      <text class="s" x="740" y="135">the command line.</text>
+      <text class="s" x="740" y="166">Picks a real or simulated</text>
+      <text class="s" x="740" y="183">driver for each contract.</text>
+      <text class="s" x="740" y="214">Registers every layer in</text>
+      <text class="s" x="740" y="231">one DI container.</text>
+      <text class="s" x="740" y="262">Runs start-up, and puts</text>
+      <text class="s" x="740" y="279">the machine in its safe</text>
+      <text class="s" x="740" y="296">state on shutdown.</text>
+      <text class="s" x="740" y="327">Disposes the devices,</text>
+      <text class="s" x="740" y="344">newest first.</text>
+      <text class="s" x="740" y="375">No other code calls</text>
+      <text class="s" x="740" y="392"><tspan class="m">new</tspan> on a service.</text>
+      <line class="ln" x1="720" y1="66"  x2="684" y2="66"  marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="166" x2="684" y2="166" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="286" x2="684" y2="286" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="386" x2="684" y2="386" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="500" x2="684" y2="500" marker-end="url(#d1-ah)"/>
+    </svg>
+    </div>
+    <figcaption><b>Solid arrows are compile-time dependencies. Dashed arrows are runtime notifications.</b> The dashed line splits front end from back end and also splits the threads: everything above it runs on the UI thread, and nothing below it touches the UI. Drivers depend on the Platform's contracts, never the reverse, and only the composition root references a driver. The view layer includes the shared UI toolkit, <code>LTT.UI.WinForms</code> (later <code>LTT.UI.Wpf</code>). Nothing named Platform references a UI framework. The Protocols box holds drivers LTT wrote itself over serial or TCP: the Lumentum laser, light controllers and height sensors.</figcaption>
+  </figure>
+  </div>
+
+  <div class="sub" id="responsibilities">
+  <h3><span class="num">1.2</span>Responsibilities</h3>
+  <p class="prose">Each kind of class has one job. A class doing something from the "Never" column is in the wrong layer.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Role</th><th>Layer</th><th>Does</th><th>Never</th></tr></thead>
+      <tbody>
+        <tr><td><b>View</b></td><td>Views</td><td>Layout, bindings, focus; places vendor screens the operator must use</td><td>Logic, hardware calls, creating services</td></tr>
+        <tr><td><b>View model</b></td><td>View models</td><td>Screen state, commands, display text through <code>Loc</code></td><td>Reference WinForms or WPF, block, marshal by hand</td></tr>
+        <tr><td><b>Operation</b></td><td>Core</td><td>One machine sequence: async and cancellable. Asks the operator through <code>IOperatorPrompt</code></td><td>Touch controls, show dialogs, pick a thread</td></tr>
+        <tr><td><b>Machine model</b></td><td>Core</td><td>Named axes, signals and stations; the safety policy</td><td>Reference a vendor type</td></tr>
+        <tr><td><b>State machine</b></td><td>Core</td><td>Hold one lifecycle and reject invalid transitions</td><td>Call devices, do I/O, be written from two threads</td></tr>
+        <tr><td><b>Contract</b></td><td>Platform</td><td>A vendor-neutral interface for one kind of device</td><td>Contain vendor types or translated text</td></tr>
+        <tr><td><b>Driver</b></td><td>Drivers</td><td>Talk to one SDK or protocol. Own its threads. Throw <code>HardwareException</code></td><td>Contain process rules, show dialogs, use <code>Loc</code></td></tr>
+        <tr><td><b>Simulator</b></td><td>Drivers</td><td>Implement a contract against the shared <code>SimWorld</code></td><td>Contain process rules</td></tr>
+        <tr><td><b>Composition root</b></td><td>Views (host)</td><td>Choose implementations, wire them, run start-up and shutdown</td><td>Anything else</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div class="sub" id="assemblies">
+  <h3><span class="num">1.3</span>Assemblies and dependencies</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Assembly</th><th>Layer</th><th>May reference</th><th>Never references</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">&lt;Machine&gt;.exe</td><td>Views, composition root</td><td>Everything below, the driver assemblies, <code>LTT.UI.WinForms</code></td><td>(top of the graph)</td></tr>
+        <tr><td class="proj">LTT.UI.WinForms</td><td>Views (shared UI toolkit)</td><td>Platform</td><td>Machine code, drivers, vendor SDKs</td></tr>
+        <tr><td class="proj">LTT.&lt;Machine&gt;.Presentation</td><td>View models</td><td>Core, Platform</td><td>WinForms, WPF, <code>System.Drawing</code>, drivers</td></tr>
+        <tr><td class="proj">LTT.&lt;Machine&gt;.Core</td><td>Machine and operations</td><td>Platform</td><td>Any UI, drivers, vendor SDKs</td></tr>
+        <tr><td class="proj">LTT.Platform</td><td>Contracts and kernel</td><td>The base library and small abstraction packages</td><td>Any UI, vendor SDKs, machine code</td></tr>
+        <tr><td class="proj">LTT.Hardware.&lt;Vendor&gt;</td><td>Drivers</td><td>Platform, the vendor SDK. An ActiveX driver also uses <code>System.Windows.Forms</code>, internally only, to host the control</td><td>Core, <code>LTT.UI.*</code>, other drivers</td></tr>
+        <tr><td class="proj">LTT.Hardware.Simulation</td><td>Drivers</td><td>Platform, <code>LTT.Hardware.Protocols</code> (for emulators)</td><td>Vendor SDKs, machine code</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">A new assembly is added only for a new dependency boundary: a vendor SDK, a UI technology or a machine. Everything else is a folder. Inside an assembly, code is grouped by feature (<code>Alignment/</code>, <code>Calibration/</code>, <code>Production/</code>), not by kind (<code>Services/</code>, <code>Models/</code>), so a change to one feature stays in one place.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-layers">
+  <div class="part-head"><span class="part-no">Part 2</span><h2>Layers</h2><p>Each layer's responsibilities, contents and rules, from the screen down to the hardware, and the composition root that wires them together.</p></div>
+
+  <div class="sub" id="views">
+  <h3><span class="num">2.1</span>Views</h3>
+  <div class="prose">
+    <p>The view layer has two parts.</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Assembly</th><th>Holds</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">&lt;Machine&gt;.exe</td><td>The host application: forms and user controls for this machine, the composition root, and the WinForms implementations of the ports the lower layers need (dialog service, operator prompts, file dialogs, log panel). It places any vendor screen the operator must use, such as the AISYS VAlign teach screen.</td></tr>
+        <tr><td class="proj">LTT.UI.WinForms</td><td>The UI toolkit shared by every machine, which knows no machine:
+          <ul>
+            <li><code>LocUi</code> (fonts and texts per language).</li>
+            <li>The <code>Bind(ICommand)</code> helper.</li>
+            <li><code>JogPad</code>, and device panels for I/O, camera parameters and lights. Each works against a device contract and takes its labels from the caller.</li>
+          </ul>
+          <code>LTT.UI.Wpf</code> will be its WPF counterpart.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li>A view binds to exactly one view model, in one block in its constructor, and contains no other logic.</li>
+    <li>Pages are created by the container and added to the main window in code, so they can take constructor parameters. Each page's own designer still works.</li>
+    <li>Anything a second machine could reuse unchanged goes into <code>LTT.UI.WinForms</code>, not into the machine's exe.</li>
+    <li>Text comes from string-table keys, and fonts come from <code>LocUi.ApplyFontTree</code>. Views never set literal text or fonts.</li>
+  </ul>
+  <p class="codehead">&lt;Machine&gt;.exe / Production / ProductionView.cs</p>
+<pre><span class="k">internal partial class</span> ProductionView : UserControl
+{
+    <span class="k">public</span> ProductionView(ProductionViewModel vm)
+    {
+        InitializeComponent();
+        lblBlock.DataBindings.Add(<span class="k">"Text"</span>, vm, <span class="k">nameof</span>(vm.BlockText));
+        btnStart.Bind(vm.StartCommand);    <span class="c">// LTT.UI.WinForms: Click → Execute, Enabled ← CanExecute</span>
+        btnStop.Bind(vm.StopCommand);
+    }
+}</pre>
+  </div>
+
+  <div class="sub" id="viewmodels">
+  <h3><span class="num">2.2</span>View models</h3>
+  <div class="prose">
+    <p>Both MVP and MVVM separate screen logic from the controls. The difference is what survives a move to WPF:</p>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h4>MVP (passive view)</h4>
+      <ul>
+        <li>The presenter calls <code>view.SetBlockText(…)</code> through an <code>IProductionView</code> interface.</li>
+        <li>Every screen needs that interface, a presenter and a hand-written implementation in its code-behind.</li>
+        <li>WPF works against this style. Each WPF screen needs an adapter that turns the presenter's calls into bindable properties.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>MVVM (chosen)</h4>
+      <ul>
+        <li>The view model exposes properties and commands and raises <code>PropertyChanged</code>. It knows nothing about the view.</li>
+        <li>WinForms on .NET Framework binds properties natively. Commands need one small helper.</li>
+        <li>WPF binds the <b>same class</b> unchanged, so moving to WPF only means writing new views.</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 230" role="img" aria-label="One screen. A WinForms ProductionView and a WPF ProductionView both bind to the same ProductionViewModel. The view model awaits ProductionRun in Core and receives events from the event bus on the UI thread.">
+      <defs>
+        <marker id="d3-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d3-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+      <rect class="front" x="20" y="30" width="230" height="64" rx="5"/>
+      <text class="t" x="40" y="57">ProductionView</text>
+      <text class="s" x="40" y="80">WinForms user control</text>
+      <rect class="front dash" x="20" y="150" width="230" height="64" rx="5"/>
+      <text class="t" x="40" y="177">ProductionView.xaml</text>
+      <text class="s" x="40" y="200">WPF · no view-model changes</text>
+      <rect class="front" x="350" y="30" width="230" height="64" rx="5"/>
+      <text class="t" x="370" y="57">ProductionViewModel</text>
+      <text class="s" x="370" y="80">no WinForms or WPF types</text>
+      <rect class="back" x="730" y="30" width="210" height="64" rx="5"/>
+      <text class="t" x="750" y="57">ProductionRun</text>
+      <text class="s" x="750" y="80">Core operation</text>
+      <rect class="back" x="730" y="150" width="210" height="64" rx="5"/>
+      <text class="t" x="750" y="177">IEventBus</text>
+      <text class="s" x="750" y="200">RunProgress, state changes</text>
+      <line class="ln" x1="250" y1="62" x2="348" y2="62" marker-end="url(#d3-ah)"/>
+      <text class="s" x="299" y="54" text-anchor="middle">binds</text>
+      <polyline class="ln dash" points="250,182 420,182 420,96" marker-end="url(#d3-ah)"/>
+      <text class="s" x="335" y="174" text-anchor="middle">binds</text>
+      <line class="ln" x1="580" y1="62" x2="728" y2="62" marker-end="url(#d3-ah)"/>
+      <text class="m" x="655" y="54" text-anchor="middle">await RunAsync(ct)</text>
+      <polyline class="ln-warm dash" points="730,182 520,182 520,96" marker-end="url(#d3-aw)"/>
+      <text class="s" x="625" y="174" text-anchor="middle">events on the UI thread</text>
+    </svg>
+    </div>
+    <figcaption><b>The view model is the unit that carries over from WinForms to WPF.</b> A WinForms view and a WPF view bind to the same class. It calls down into Core with <code>await</code> and receives events from the bus on the UI thread, so its properties change only on that thread.</figcaption>
+  </figure>
+
+  <p class="codehead">LTT.&lt;Machine&gt;.Presentation / Production / ProductionViewModel.cs</p>
+<pre><span class="k">internal sealed class</span> ProductionViewModel : ViewModelBase
+{
+    <span class="k">private readonly</span> IProductionRun _run;
+    <span class="k">private string</span> _blockText = <span class="k">""</span>;
+
+    <span class="k">public</span> ProductionViewModel(IProductionRun run, IMachineState state, IEventBus events)
+    {
+        _run = run;
+        StartCommand = <span class="k">new</span> AsyncCommand(ct =&gt; _run.RunAsync(ct), () =&gt; state.Mode == MachineMode.Idle);
+        StopCommand  = <span class="k">new</span> RelayCommand(_run.Stop, () =&gt; state.Mode == MachineMode.Running || state.Mode == MachineMode.Paused);
+        events.Subscribe&lt;RunProgress&gt;(OnProgress);              <span class="c">// delivered on the UI thread</span>
+        events.Subscribe&lt;MachineStateChanged&gt;(_ =&gt; RaiseCanExecuteChanged());
+    }
+
+    <span class="k">public</span> AsyncCommand StartCommand { <span class="k">get</span>; }
+    <span class="k">public</span> RelayCommand StopCommand { <span class="k">get</span>; }
+    <span class="k">public string</span> BlockText { <span class="k">get</span> =&gt; _blockText; <span class="k">private set</span> =&gt; Set(<span class="k">ref</span> _blockText, value); }
+
+    <span class="k">private void</span> OnProgress(RunProgress e) =&gt; BlockText = Loc.Format(<span class="k">"Run.Block"</span>, e.Index + 1, e.Total);
+}</pre>
+
+  <ul class="bul">
+    <li><strong>UI-neutral by construction.</strong> <code>ICommand</code> and <code>INotifyPropertyChanged</code> are in the base library. <code>ViewModelBase</code>, <code>AsyncCommand</code> and <code>RelayCommand</code> come from <code>LTT.Platform</code>.</li>
+    <li><strong>One place turns a click into an <code>await</code>.</strong> <code>AsyncCommand</code> disables itself while it runs and logs any exception. Nothing else in the front end is <code>async void</code>.</li>
+    <li><strong>Screen state only.</strong> A view model holds what its screen shows and edits. Facts about the machine come from Core, through <code>MachineState</code>, read models and the bus.</li>
+    <li><strong>Other windows</strong> open through one generic <code>IDialogService.ShowAsync&lt;TViewModel&gt;()</code>, which looks up the view registered for that view model. There is no launcher with one method per window.</li>
+    <li><strong>Small.</strong> A view model with more than about eight dependencies is doing an operation's job, and the logic moves into Core. Guard rail G5 checks this.</li>
+    <li><strong>Tested from the first commit,</strong> against the simulators through the machine harness, with a scripted dialog service.</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="core">
+  <h3><span class="num">2.3</span>Core: machine and operations</h3>
+  <div class="prose">
+    <p>Core holds everything the machine does, with no UI and no vendor code. It is headless: WinForms, WPF, the test harness, or a remote interface such as an MES link or a service tool all drive it the same way, through operations.</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Area</th><th>Holds</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td><b>Machine model</b></td><td>Named axes, signals and stations over the device contracts, plus the safety policy</td><td><code>Stage</code> (XY), Z and θ axes, <code>MachineIo</code> with named inputs and outputs, <code>VisionStation</code>, <code>MotionSafetyPolicy</code></td></tr>
+        <tr><td><b>Operations</b></td><td>One class per machine sequence</td><td>Initialization, product load, alignment, production run, galvo-grid calibration, camera–laser offset, focus find, power calibration, manual motion</td></tr>
+        <tr><td><b>State</b></td><td>Lifecycles and alarms</td><td><code>MachineState</code>, <code>ProductionRun</code>, <code>AlarmService</code></td></tr>
+        <tr><td><b>Storage</b></td><td>Ports for the data Core owns, and their file implementations</td><td><code>IProductRepository</code>, <code>ICalibrationStore</code>, <code>IProductionRecordSink</code>, <code>ISettingsStore</code></td></tr>
+        <tr><td><b>Host ports</b></td><td>What Core needs from the application</td><td><code>IOperatorPrompt</code>, <code>ILogger&lt;T&gt;</code>, <code>IEventBus</code>, <code>TimeProvider</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Operations</h4>
+  <ul class="bul">
+    <li>An operation is <code>async Task</code> and takes a <code>CancellationToken</code>. It runs through <code>MachineOperations</code>, which gives it exclusive use of the resources it names, sets the machine state and owns the cancellation.</li>
+    <li>Operations use the machine model, and only the machine model uses device contracts. Shared steps, such as moving at the safety height or finding a mark, belong to the machine model and are never copied between operations.</li>
+    <li>Operations report progress through events and ask the operator through <code>IOperatorPrompt</code>. They never show UI.</li>
+    <li>Parameters come in as immutable snapshots. A run reads the product and settings once at its start and is not affected by edits made while it runs.</li>
+  </ul>
+
+  <h4>Motion safety policy</h4>
+  <p class="prose"><code>MotionSafetyPolicy</code> holds the rules every move must pass: soft limits, Z at the safety height before long XY moves, interlocks closed, and the machine not in Alarm. The machine model does what the policy requires, such as lifting Z. It refuses anything else with a <code>HardwareException</code> that names the rule. Command <code>CanExecute</code> asks the same policy, so a button is disabled for the same reason the move would be refused.</p>
+
+  <h4>Resources</h4>
+  <p class="prose"><code>MachineOperations</code> hands out named resources: the stage, the laser, the camera, or a whole station. A single-station machine uses one resource for the whole machine. A machine with two tables or two heads declares one per station, and two operations can then run at once without a redesign.</p>
+  </div>
+
+  <div class="sub" id="platform">
+  <h3><span class="num">2.4</span>Platform</h3>
+  <p class="prose"><code>LTT.Platform</code> is shared by every machine. It holds the contracts devices are used through and the small kernel the other layers build on. It references no UI framework; the shared UI toolkit belongs to the <a href="#views">view layer</a>.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Area</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td><b>Device contracts</b></td><td><code>IDevice</code>, <code>IMotionController</code> / <code>IAxis</code>, <code>IDigitalIO</code>, <code>ICamera</code>, <code>IMarkFinder</code>, <code>ILaserSource</code> / <code>ILaserPresets</code>, <code>IMarkingEngine</code>, <code>ILightController</code>, <code>IDistanceSensor</code></td></tr>
+        <tr><td><b>Capabilities</b></td><td>Optional vendor features, discovered with <code>as</code>: <code>IAnalogInputs</code>, <code>ICommandScriptChannel</code></td></tr>
+        <tr><td><b>Device threading</b></td><td><code>DeviceGate</code>, <code>DeviceWorker</code>, and the UI-thread invoker for UI-bound devices, built on <code>SynchronizationContext</code> so it needs no UI framework (see Drivers)</td></tr>
+        <tr><td><b>Errors</b></td><td><code>HardwareException</code>, <code>HardwareErrorCode</code></td></tr>
+        <tr><td><b>Kernel</b></td><td><code>IEventBus</code>, <code>ViewModelBase</code>, <code>AsyncCommand</code>, <code>RelayCommand</code>, <code>IDialogService</code>, <code>IOperatorPrompt</code>, the operation runner behind <code>MachineOperations</code></td></tr>
+        <tr><td><b>Localization</b></td><td><code>Loc</code>, string tables, <code>languages.tsv</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h4>Contract rules</h4>
+  <ul class="bul">
+    <li>Contracts are vendor-neutral. They contain no vendor types and no translated text.</li>
+    <li>Every long operation is async and takes a <code>CancellationToken</code>. Cancelling stops the hardware, then throws <code>OperationCanceledException</code>.</li>
+    <li>Events are raised on driver threads. Consumers receive them through the bus.</li>
+    <li>Status is an immutable snapshot (for example <code>AxisStatus</code>), replaced atomically so readers never see half an update.</li>
+    <li>Vendor extras become capability interfaces, not members that every other driver has to stub.</li>
+    <li>Changes are additive within a major version. Removing or changing a member means a new major version of the Platform (see <a href="#maintain">Maintenance</a>).</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="drivers">
+  <h3><span class="num">2.5</span>Drivers and simulation</h3>
+  <div class="prose">
+    <p>Every device follows the same shape. Core calls a vendor-neutral contract. The driver behind it decides which thread calls the SDK, and turns SDK errors into one exception type. A simulator behind the same contract reads and writes one shared simulated machine.</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 560" role="img" aria-label="Device stack. An operation in Core awaits the machine model, which checks the motion safety policy and calls the vendor-neutral IMotionController contract. The contract is implemented by the A3200 driver, which calls the SDK, or, when simulated, by SimMotionController, which writes the stage position into a shared SimWorld. SimCamera, SimMarkFinder and SimDigitalIO read the same world.">
+      <defs>
+        <marker id="d5-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect class="back" x="40" y="20" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="46">ProductionRun · AlignmentService</text>
+      <text class="s" x="60" y="67">Core · Operations · awaits and passes the CancellationToken down</text>
+      <rect class="back" x="40" y="112" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="138">Stage.MoveToAsync</text>
+      <text class="s" x="60" y="159">Core · Machine model · MotionSafetyPolicy checks the move first</text>
+      <rect class="box" x="40" y="204" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="230">IMotionController</text>
+      <text class="s" x="60" y="251">LTT.Platform · vendor-neutral contract, shared by every machine</text>
+      <rect class="box" x="40" y="296" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="322">A3200MotionController</text>
+      <text class="s" x="60" y="343">LTT.Hardware.Aerotech · threading model: free-threaded</text>
+      <rect class="box-2" x="40" y="388" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="414">A3200 SDK</text>
+      <text class="s" x="60" y="435">native DLLs · x64 · loaded only on the machine</text>
+      <line class="ln" x1="120" y1="80" x2="120" y2="110" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="100">await (ct)</text>
+      <line class="ln" x1="120" y1="172" x2="120" y2="202" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="192">await</text>
+      <line class="ln" x1="120" y1="264" x2="120" y2="294" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="284">implemented by</text>
+      <line class="ln" x1="120" y1="356" x2="120" y2="386" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="376">blocking call on a background task; errors become HardwareException</text>
+      <polyline class="ln dash" points="520,234 750,234 750,294" marker-end="url(#d5-ah)"/>
+      <text class="s" x="635" y="226" text-anchor="middle">or, when simulated</text>
+      <rect class="box dash" x="580" y="296" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="322">SimMotionController</text>
+      <text class="s" x="600" y="343">LTT.Hardware.Simulation</text>
+      <rect class="back" x="580" y="388" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="414">SimWorld</text>
+      <text class="s" x="600" y="435">stage position · outputs · laser · marks</text>
+      <rect class="box dash" x="580" y="480" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="506">SimCamera · SimMarkFinder · SimDigitalIO</text>
+      <text class="s" x="600" y="527">draw the mark, derive sensor inputs</text>
+      <line class="ln" x1="750" y1="356" x2="750" y2="386" marker-end="url(#d5-ah)"/>
+      <text class="s" x="762" y="376">writes position</text>
+      <line class="ln" x1="750" y1="448" x2="750" y2="478" marker-end="url(#d5-ah)"/>
+      <text class="s" x="762" y="468">read by</text>
+    </svg>
+    </div>
+    <figcaption><b>Real and simulated drivers sit behind the same contract, and only the driver chooses the thread.</b> The simulators share one <code>SimWorld</code>. A simulated stage move changes where the camera sees the mark, so alignment converges on a laptop and in tests.</figcaption>
+  </figure>
+
+  <h4>Four threading models</h4>
+  <p class="prose">Each driver states its threading model in its class remarks. The two models that need a mechanism have one in the Platform.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Model</th><th>Mechanism</th><th>Use when</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td><b>UI-bound</b></td><td class="proj">UI invoker</td><td>The operator must use the vendor's own screen, so its control is shown in the main window</td><td>AISYS VAlign when its teach screen and image display are used. Rule T8 applies</td></tr>
+        <tr><td><b>Owner thread</b></td><td class="proj">DeviceWorker</td><td>An SDK bound to the thread that created it: STA COM objects, ActiveX controls whose screens aren't needed (hosted on a hidden window), thread-affine native libraries</td><td>MarkingMate controls, COM motion channels such as ACS SPiiPlus, USB trim-engine libraries</td></tr>
+        <tr><td><b>Serialised</b></td><td class="proj">DeviceGate</td><td>Request/response protocols, and SDKs that aren't thread-safe but can be called from any thread</td><td>Lumentum laser, RS-232 light controllers, TCP height sensors, Googol GTS I/O</td></tr>
+        <tr><td><b>Free-threaded</b></td><td class="proj">none</td><td>A thread-safe SDK with its own callback thread</td><td>Aerotech A3200 (blocking moves on a background task, status from the diagnostics callback), Basler pylon</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Assign a model from the SDK manual's thread-safety statement, not from what happens to work.</p>
+
+  <h4>ActiveX devices</h4>
+  <div class="prose">
+    <p>MarkingMate and AISYS both ship their developer interface as ActiveX.</p>
+    <ul>
+      <li><b>MarkingMate:</b> the OCX, with more than 1,000 functions, is Eastern Logic's integration route. The user manual lists no other API beyond I/O signals and an optional TCP/IP text input.</li>
+      <li><b>AISYS:</b> VAlign and the OVK Framework beneath it are both ActiveX components. VAlign is sold as a complete vision system with its own operator screens. Its only other interface is RS-232 commands, meant for PLC-controlled machines.</li>
+    </ul>
+    <p>An ActiveX control needs three things: a single-threaded apartment (STA) thread, a message loop, and a parent window. It doesn't need to be visible, and it doesn't need the application's main UI thread. That leaves two ways to host one:</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Hosting</th><th>How</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><b>Owner thread</b> (preferred)</td><td>A <code>DeviceWorker</code> in STA mode runs its own message loop and hosts the control on a hidden form. Every call goes through the worker.</td><td>The operator doesn't need the vendor's screen, as for MarkingMate marking. A preview of the marking file, if wanted, is drawn by our own view from the document.</td></tr>
+        <tr><td><b>UI-bound</b></td><td>The control sits in a panel in the main window, and calls are posted to the UI thread's <code>SynchronizationContext</code>.</td><td>The operator uses the vendor's screen, as with the VAlign teach screen. Rule T8 applies.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li><b>Why owner thread is preferred.</b> The device no longer shares the UI thread, so a busy screen can't delay marking, and a long device call can't freeze the screen. The re-entrancy risk in rule T8 disappears for that device.</li>
+    <li><b>Check with the vendor first.</b> Before moving a control to an owner thread, confirm with the vendor that every control the driver uses works on a hidden window. Then run the device's contract tests on the machine. Several MarkingMate controls are already used while hidden. Whether the OVK processing modules work without a window is not publicly documented.</li>
+    <li><b>The UI-bound case can be avoided.</b> The OVK Framework also offers processing modules for pattern matching and alignment (OvkPat, OvkAlign), and AISYS lists .NET Framework and .NET 5/6 support. A driver built on those could find marks with no vendor screen, with teaching done in our own view. Because <code>IMarkFinder</code> is vendor-neutral, another vision library can also be swapped in without touching Core.</li>
+    <li><b>No UI toolkit in drivers.</b> Hosting an ActiveX control needs <code>System.Windows.Forms</code> inside the driver, for <code>AxHost</code>. The driver never references <code>LTT.UI.*</code>. It hands a vendor screen to the view layer through <code>IHasHardwareView</code>, and the view layer decides where to place it.</li>
+  </ul>
+<pre><span class="c">// LTT.Platform: one call at a time. The timeout becomes HardwareException(Timeout, device).</span>
+<span class="k">public sealed class</span> DeviceGate
+{
+    <span class="k">public</span> DeviceGate(<span class="k">string</span> device, TimeSpan timeout);
+    <span class="k">public</span> Task&lt;T&gt; RunAsync&lt;T&gt;(Func&lt;CancellationToken, Task&lt;T&gt;&gt; call, CancellationToken ct);
+}
+
+<span class="c">// LTT.Platform: every call runs on the thread that created the SDK object (STA pumps messages).</span>
+<span class="k">public sealed class</span> DeviceWorker : IDisposable
+{
+    <span class="k">public</span> DeviceWorker(<span class="k">string</span> device, ApartmentState apartment);
+    <span class="k">public</span> Task&lt;T&gt; RunAsync&lt;T&gt;(Func&lt;T&gt; call, CancellationToken ct);
+}</pre>
+  <p class="prose"><strong>Start, then wait.</strong> Long operations (moves, homing, marking) begin with a short call and then await a completion event or status. They are never one long blocking call on a gate or worker, so Stop can always get through.</p>
+
+  <h4>Driver rules</h4>
+  <ul class="bul">
+    <li>One assembly per vendor SDK. It references the SDK and brings the SDK's native DLLs into the build output. A machine references only the drivers for the hardware it has.</li>
+    <li>Drivers LTT writes over serial or TCP, with no vendor SDK, share <code>LTT.Hardware.Protocols</code>.</li>
+    <li>Each driver comes with its own registration helper, for example <code>AddA3200Motion(axes)</code>.</li>
+    <li>A driver converts every SDK error into a <code>HardwareException</code>, keeps vendor status codes to itself, and contains no process rules.</li>
+    <li>Real drivers are created in <code>[MethodImpl(MethodImplOptions.NoInlining)]</code> factory methods, so simulation never loads a vendor assembly.</li>
+    <li><code>IDevice</code> has a <code>State</code> (Disconnected, Connecting, Ready or Faulted). Changes go on the bus as <code>DeviceStateChanged</code>, and the start-up screen and the status bar both show them.</li>
+  </ul>
+
+  <h4>Simulation</h4>
+  <ul class="bul">
+    <li>Every contract has a simulator. Each device is Real or Simulated in <code>Hardware.ini</code>, and <code>--simulate</code> makes everything simulated, so the application runs on a laptop with no vendor SDKs installed.</li>
+    <li>Protocol drivers run their real code against device emulators; the Lumentum emulator is one. Only the wire is simulated.</li>
+    <li><code>SimWorld</code> holds the simulated machine:
+      <ul>
+        <li>The stage position, written by the motion simulator.</li>
+        <li>The outputs, and the inputs derived from them (turning the vacuum on sets the vacuum sensor after a delay).</li>
+        <li>The laser state, which feeds the power-meter reading.</li>
+        <li>The mark positions of the loaded product.</li>
+        <li>Fault injection, such as a door opening at a set time.</li>
+      </ul>
+      The machine supplies a <code>SimWorldProfile</code> that says which output feeds which input.</li>
+    <li>Start-up refuses a real laser or marking engine combined with simulated motion or I/O. Simulation shows a banner in the title bar, and a Release build needs <code>--allow-simulation</code>.</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="composition">
+  <h3><span class="num">2.6</span>Composition root</h3>
+  <div class="prose">
+    <p>The container is <strong>Microsoft.Extensions.DependencyInjection</strong>. It targets .NET Standard 2.0, so it runs on .NET Framework, and it is the same container a WPF or .NET 8 host would use. Each assembly registers its own types through an <code>Add…()</code> extension method. Its classes can stay <code>internal</code>, but their constructors must be <code>public</code>.</p>
+  </div>
+  <p class="codehead">&lt;Machine&gt;.exe / Program.cs</p>
+<pre>[STAThread]
+<span class="k">static void</span> Main(<span class="k">string</span>[] args)
+{
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(<span class="k">false</span>);
+    SynchronizationContext.SetSynchronizationContext(<span class="k">new</span> WindowsFormsSynchronizationContext());  <span class="c">// the event bus captures it</span>
+
+    <span class="k">var</span> startup = HardwareStartup.Load(args);   <span class="c">// data root, Hardware.ini, --simulate</span>
+
+    <span class="k">var</span> services = <span class="k">new</span> ServiceCollection()
+        .AddLttPlatform()                                     <span class="c">// event bus, operation runner, TimeProvider, logging</span>
+        .AddMachineHardware(startup.Profile)                  <span class="c">// real or simulated device per contract</span>
+        .AddMachineCore(startup.Paths)                        <span class="c">// machine model, operations, state, storage</span>
+        .AddMachinePresentation()                             <span class="c">// view models</span>
+        .AddMachineViews();                                   <span class="c">// main window, pages, dialogs, log panel</span>
+
+    <span class="k">using var</span> provider = services.BuildServiceProvider(validateScopes: <span class="k">true</span>);
+    Application.Run(provider.GetRequiredService&lt;MainShell&gt;());
+}   <span class="c">// safe state has run on close; leaving Main disposes the container, disconnecting devices newest first</span></pre>
+
+  <p class="codehead">&lt;Machine&gt;.exe / Composition / HardwareModule.cs (names illustrative)</p>
+<pre><span class="k">internal static class</span> HardwareModule
+{
+    <span class="k">public static</span> IServiceCollection AddMachineHardware(<span class="k">this</span> IServiceCollection s, HardwareProfile hw)
+    {
+        <span class="k">if</span> (hw.Motion == DeviceMode.Real) AddRealMotion(s, hw);
+        <span class="k">else</span> s.AddSimMotion(hw.Axes);                          <span class="c">// helper from LTT.Hardware.Simulation</span>
+        <span class="c">// I/O, camera, mark finder, marking engine, laser, peripherals: same pattern</span>
+        <span class="k">return</span> s;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]   <span class="c">// simulation never JIT-compiles a vendor type</span>
+    <span class="k">private static void</span> AddRealMotion(IServiceCollection s, HardwareProfile hw) =&gt; s.AddA3200Motion(hw.Axes);
+}</pre>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Lifetime</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">Singleton</td><td>Devices, the machine model, operations, storage, the event bus, <code>MachineState</code>, <code>AlarmService</code>, the main window, pages and their view models. There is one machine, and pages live for the whole session.</td></tr>
+        <tr><td class="proj">Transient</td><td>Dialogs and their view models, created through <code>IDialogService</code>.</td></tr>
+        <tr><td class="proj">Scoped</td><td>Not used.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li><strong>One host at a time.</strong> WPF pages are hosted inside the WinForms window, and later the other way round, so there is never a second DI graph to drift. If two hosts ever have to run in parallel, the <code>Add…()</code> calls move into a shared composition assembly first.</li>
+    <li><strong>No service locator.</strong> Only <code>Program.cs</code> and <code>IDialogService</code> resolve from the container. Everything else receives its dependencies through its constructor.</li>
+    <li><strong>Start-up</strong> is an ordered list of <code>IStartupStep</code>s: configuration, devices, calibration data, the marking engine. Each step reports to the start-up screen. Failures are collected and shown at the end, and only steps marked as required stop start-up.</li>
+    <li><strong>Shutdown</strong> cancels the running operation, puts the machine in its safe state, then disposes the container.</li>
+    <li><strong>Unhandled exceptions</strong> are logged and trigger the safe state. That covers <code>Application.ThreadException</code>, <code>AppDomain.UnhandledException</code> and <code>TaskScheduler.UnobservedTaskException</code>.</li>
+  </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-crosscutting">
+  <div class="part-head"><span class="part-no">Part 3</span><h2>Cross-cutting concerns</h2><p>Concerns that run through every layer.</p></div>
+
+  <div class="sub" id="threads">
+  <h3><span class="num">3.1</span>Threading</h3>
+  <div class="prose">
+    <p>There are three kinds of thread, and each belongs to one layer. The UI thread belongs to views and view models. Core runs on pool threads and doesn't care which one. Device threads belong to their driver.</p>
+    <p>A vendor ActiveX control shown to the operator, such as AISYS VAlign, lives on the UI thread, and its driver marshals every call there. That makes blocking the UI thread dangerous as well as slow: a driver waiting to marshal onto a blocked UI thread deadlocks. Hosting ActiveX devices on their own owner thread wherever possible (see <a href="#drivers">Drivers</a>) keeps this case rare.</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 750" role="img" aria-label="Sequence across three threads during a production run. The UI thread awaits the run in Core. Core awaits a stage move run by the driver, then publishes progress, which the bus posts back to the UI thread. Separately, the I/O poll thread reports a door opening. Core pauses the run, and the state change is posted to the UI thread.">
+      <defs>
+        <marker id="d2-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d2-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+      <rect class="lane-front" x="20"  y="84" width="280" height="656" rx="4"/>
+      <rect class="lane" x="340" y="84" width="280" height="656" rx="4"/>
+      <rect class="lane" x="660" y="84" width="280" height="656" rx="4"/>
+      <rect class="front" x="20" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="160" y="41" text-anchor="middle">UI thread</text>
+      <text class="s" x="160" y="61" text-anchor="middle">never blocks · runs view models</text>
+      <rect class="back" x="340" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="480" y="41" text-anchor="middle">Core · thread pool</text>
+      <text class="s" x="480" y="61" text-anchor="middle">async throughout · never marshals</text>
+      <rect class="box" x="660" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="800" y="41" text-anchor="middle">Device threads</text>
+      <text class="s" x="800" y="61" text-anchor="middle">owned by each driver</text>
+      <line class="ln-faint dash" x1="160" y1="84" x2="160" y2="740"/>
+      <line class="ln-faint dash" x1="480" y1="84" x2="480" y2="740"/>
+      <line class="ln-faint dash" x1="800" y1="84" x2="800" y2="740"/>
+
+      <rect class="box" x="35" y="100" width="250" height="30" rx="4"/><text class="n" x="160" y="120" text-anchor="middle">Operator clicks Start</text>
+      <line class="ln" x1="160" y1="158" x2="478" y2="158" marker-end="url(#d2-ah)"/>
+      <text class="m" x="320" y="151" text-anchor="middle">await run.RunAsync(ct)</text>
+      <rect class="box" x="355" y="186" width="250" height="30" rx="4"/><text class="n" x="480" y="206" text-anchor="middle">Checks interlocks and laser</text>
+      <line class="ln" x1="480" y1="244" x2="798" y2="244" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="237" text-anchor="middle">await Stage.MoveToAsync(x, y, ct)</text>
+      <rect class="box" x="675" y="272" width="250" height="30" rx="4"/><text class="n" x="800" y="292" text-anchor="middle">A3200 move, run by its driver</text>
+      <line class="ln dash" x1="800" y1="330" x2="482" y2="330" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="323" text-anchor="middle">task completes</text>
+      <rect class="box" x="355" y="358" width="250" height="30" rx="4"/><text class="n" x="480" y="378" text-anchor="middle">Publishes RunProgress (block 2 of 4)</text>
+      <line class="ln-warm dash" x1="480" y1="416" x2="162" y2="416" marker-end="url(#d2-aw)"/>
+      <text class="m" x="320" y="409" text-anchor="middle">bus posts to the UI thread</text>
+      <rect class="box" x="35" y="444" width="250" height="30" rx="4"/><text class="n" x="160" y="464" text-anchor="middle">BlockText set; the label repaints</text>
+
+      <line class="ln-faint" x1="20" y1="500" x2="940" y2="500"/>
+      <text class="s" x="928" y="494" text-anchor="end">meanwhile</text>
+
+      <rect class="box" x="675" y="528" width="250" height="30" rx="4"/><text class="n" x="800" y="548" text-anchor="middle">I/O poll thread: door opens</text>
+      <line class="ln" x1="800" y1="586" x2="482" y2="586" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="579" text-anchor="middle">InterlockChanged</text>
+      <rect class="box" x="355" y="614" width="250" height="30" rx="4"/><text class="n" x="480" y="634" text-anchor="middle">Run pauses at its next checkpoint</text>
+      <line class="ln-warm dash" x1="480" y1="672" x2="162" y2="672" marker-end="url(#d2-aw)"/>
+      <text class="m" x="320" y="665" text-anchor="middle">MachineStateChanged(Paused)</text>
+      <rect class="box" x="35" y="700" width="250" height="30" rx="4"/><text class="n" x="160" y="720" text-anchor="middle">PAUSED banner; Resume enabled</text>
+    </svg>
+    </div>
+    <figcaption><b>Nothing waits on the UI thread, and only the bus crosses onto it</b> (amber arrows). The interlock pauses the run without involving the UI thread, so pausing works even when the screen is busy. The UI finds out afterwards, from the state change.</figcaption>
+  </figure>
+
+  <h4>Threading rules</h4>
+  <ol class="rules warm">
+    <li><b>The UI thread never waits.</b> Views and view models don't use <code>.Wait()</code>, <code>.Result</code>, <code>Thread.Sleep</code>, <code>Application.DoEvents</code> or synchronous <code>Invoke</code>.
+      <span class="why">Analyzers enforce this at build time (G3).</span></li>
+    <li><b>View-model properties change on the UI thread only.</b> The bus delivers there, and code after an <code>await</code> in a view model resumes there.
+      <span class="why">So view models never use <code>ConfigureAwait(false)</code>. WinForms bindings throw if <code>PropertyChanged</code> fires on another thread.</span></li>
+    <li><b>Core and drivers use <code>ConfigureAwait(false)</code> and never marshal.</b> Every long operation is <code>async Task</code> and takes a <code>CancellationToken</code>. There is no <code>async void</code> below the view layer.</li>
+    <li><b>One owner for cancellation.</b> <code>MachineOperations</code> runs operations and owns their cancellation. Stop cancels the current operation, and so does a fatal alarm.
+      <span class="why">Views and view models hold no <code>CancellationTokenSource</code> fields.</span></li>
+    <li><b>Drivers own their threads.</b> Each driver declares one of the four threading models and uses the matching Platform mechanism. Blocking SDK calls stay inside the driver.
+      <span class="why">Code above a driver never needs <code>Task.Run</code> to call it.</span></li>
+    <li><b>Continuous state is pulled. Discrete events are pushed.</b> Axis positions and I/O levels are snapshots that a UI timer reads 10–20 times a second. Alarms, interlocks, progress and state changes go on the bus.
+      <span class="why">This keeps high-rate data off the bus. For indicators, one merged update per poll is enough.</span></li>
+    <li><b>Operator prompts are async.</b> <code>IOperatorPrompt.AskYesNoAsync(…)</code> returns a <code>Task&lt;bool&gt;</code>. The host posts to the UI thread and shows a dialog owned by the main window, and Core awaits the answer.</li>
+    <li><b>No device calls from code the UI thread runs while it pumps messages.</b> Paint, timer and device-event handlers read cached snapshots and never call a device.
+      <span class="why">A call into a UI-bound ActiveX control, or any STA COM call, pumps messages while it waits. A queued paint or timer can then run in the middle of it and call the same device again. That re-entrancy stalls or corrupts the device's state.</span></li>
+  </ol>
+  </div>
+
+  <div class="sub" id="events">
+  <h3><span class="num">3.2</span>Events and machine state</h3>
+  <div class="prose">
+    <p>Components announce facts on a small typed event bus in <code>LTT.Platform</code>, instead of calling each other or wiring C# events across layers. The bus captures the UI <code>SynchronizationContext</code> when it is created. WPF installs one too, so the bus works there unchanged.</p>
+  </div>
+<pre><span class="k">public interface</span> IEventBus
+{
+    <span class="k">void</span> Publish&lt;TEvent&gt;(TEvent e);
+    IDisposable Subscribe&lt;TEvent&gt;(Action&lt;TEvent&gt; handler, Delivery delivery = Delivery.UiThread);
+}
+<span class="k">public enum</span> Delivery { UiThread, PublisherThread }   <span class="c">// UiThread uses Post, never Send</span></pre>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Event (immutable, past tense)</th><th>Published by</th><th>Typical subscribers</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">MachineStateChanged</td><td>MachineState</td><td>Every page (command enablement), status bar, signal lights</td></tr>
+        <tr><td class="proj">InterlockChanged</td><td>Input monitor</td><td>MachineState (pause), I/O page</td></tr>
+        <tr><td class="proj">AlarmRaised · AlarmCleared</td><td>AlarmService</td><td>MachineOperations (cancel on fatal), alarm banner, alarm history</td></tr>
+        <tr><td class="proj">DeviceStateChanged</td><td>Each device</td><td>Start-up screen, status bar</td></tr>
+        <tr><td class="proj">RunProgress · RunCompleted</td><td>ProductionRun</td><td>Production page, records view</td></tr>
+        <tr><td class="proj">LaserStateChanged</td><td>Laser status monitor</td><td>Laser page, status bar</td></tr>
+        <tr><td class="proj">ProductLoaded</td><td>Product repository</td><td>Product, alignment and calibration pages</td></tr>
+        <tr><td class="proj">OperatorChanged</td><td>Access control</td><td>Main window (pages by role)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Event rules</h4>
+  <ol class="rules ev">
+    <li><b>One mechanism.</b> Core types don't expose C# events to other layers and don't implement <code>INotifyPropertyChanged</code>. Only view models do.
+      <span class="why">The one exception is <code>Loc.LanguageChanged</code>, which is part of the localization engine.</span></li>
+    <li><b>One marshal per update.</b> The bus posts once, and a view model sets its properties directly in the handler.</li>
+    <li><b>Facts from their owner.</b> Only the owner of a fact publishes it. Events are past-tense facts, never requests and never UI gestures.</li>
+    <li><b>No ordering between handlers.</b> If B must run after A, A's owner calls B directly, or B listens to an event that A publishes.</li>
+    <li><b>No dead events.</b> A test lists event types with no subscriber. A handler that throws is logged, and the other handlers still run.</li>
+  </ol>
+
+  <h4>Machine state</h4>
+  <p class="prose"><code>MachineState</code> in Core owns the machine's mode and the allowed transitions between modes. Each command's <code>CanExecute</code> reads the mode, and together with the safety policy that decides what the operator can do at any moment.</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 300" role="img" aria-label="Machine modes. Initializing leads to Idle. Idle goes to Busy for manual operations and back. Idle goes to Running on Start, and Running returns to Idle when done or stopped. Running goes to Paused on pause, door or light curtain, and back on Resume. Running and Paused go to Alarm, and acknowledge returns to Idle.">
+      <defs>
+        <marker id="d4-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect class="box" x="20" y="128" width="130" height="44" rx="22"/><text class="t" x="85" y="155" text-anchor="middle">Initializing</text>
+      <rect class="box" x="230" y="128" width="130" height="44" rx="22"/><text class="t" x="295" y="155" text-anchor="middle">Idle</text>
+      <rect class="box" x="480" y="28" width="130" height="44" rx="22"/><text class="t" x="545" y="55" text-anchor="middle">Busy</text>
+      <rect class="back" x="480" y="128" width="130" height="44" rx="22"/><text class="t" x="545" y="155" text-anchor="middle">Running</text>
+      <rect class="front" x="760" y="128" width="130" height="44" rx="22"/><text class="t" x="825" y="155" text-anchor="middle">Paused</text>
+      <rect class="alarm" x="480" y="236" width="130" height="44" rx="22"/><text class="t tb" x="545" y="263" text-anchor="middle">Alarm</text>
+      <line class="ln" x1="150" y1="150" x2="228" y2="150" marker-end="url(#d4-ah)"/>
+      <text class="s" x="189" y="142" text-anchor="middle">ready</text>
+      <line class="ln" x1="360" y1="142" x2="478" y2="142" marker-end="url(#d4-ah)"/>
+      <text class="s" x="419" y="134" text-anchor="middle">Start</text>
+      <line class="ln" x1="480" y1="160" x2="362" y2="160" marker-end="url(#d4-ah)"/>
+      <text class="s" x="421" y="178" text-anchor="middle">done · Stop</text>
+      <polyline class="ln" points="320,128 320,50 478,50" marker-start="url(#d4-ah)" marker-end="url(#d4-ah)"/>
+      <text class="s" x="399" y="42" text-anchor="middle">calibration, homing, jog</text>
+      <line class="ln" x1="610" y1="142" x2="758" y2="142" marker-end="url(#d4-ah)"/>
+      <text class="s" x="684" y="134" text-anchor="middle">Pause · door · curtain</text>
+      <line class="ln" x1="760" y1="160" x2="612" y2="160" marker-end="url(#d4-ah)"/>
+      <text class="s" x="686" y="178" text-anchor="middle">Resume</text>
+      <line class="ln" x1="545" y1="172" x2="545" y2="234" marker-end="url(#d4-ah)"/>
+      <text class="s" x="553" y="208">fatal alarm</text>
+      <polyline class="ln" points="825,172 825,258 612,258" marker-end="url(#d4-ah)"/>
+      <text class="s" x="718" y="250" text-anchor="middle">fatal alarm</text>
+      <polyline class="ln" points="480,258 295,258 295,174" marker-end="url(#d4-ah)"/>
+      <text class="s" x="388" y="250" text-anchor="middle">acknowledge</text>
+    </svg>
+    </div>
+    <figcaption><b>Six modes, owned by one class.</b> Busy covers manual operations: calibration, homing, alignment and jog. Busy, Running and Paused all go to Alarm on a fatal alarm. Stop from Paused ends the run and returns to Idle. Invalid transitions are rejected and logged, so a button can't start something the machine isn't ready for.</figcaption>
+  </figure>
+
+  <h4>The run has a state machine too</h4>
+  <p class="prose"><code>ProductionRun</code> holds one run's lifecycle: Ready, Aligning, Marking (block <i>i</i> of <i>n</i>), Finishing, and then Completed, Cancelled or Failed. Pause is a gate the run awaits at its checkpoints. The class publishes <code>RunProgress</code> and <code>RunCompleted</code>. It is a plain class in Core with guarded transitions, one lock and one writer (the run operation), and it is unit-tested. It is the single place to ask whether a run is in progress. There are no separate "processing" or "marking" flags.</p>
+  </div>
+
+  <div class="sub" id="errors">
+  <h3><span class="num">3.3</span>Errors, alarms and safe state</h3>
+  <h4>One error model</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Situation</th><th>Reported as</th></tr></thead>
+      <tbody>
+        <tr><td>Device or protocol failure</td><td><code>HardwareException(code, device)</code>. The driver converts every SDK error. The UI maps codes to string-table keys</td></tr>
+        <tr><td>Stop or cancel</td><td><code>OperationCanceledException</code>. Logged as a cancellation, never as an error</td></tr>
+        <tr><td>An expected outcome that isn't a failure: mark not found, power out of tolerance, operator answered No</td><td>A result value (<code>MarkFindResult</code>, a power-check result) that the caller has to inspect</td></tr>
+        <tr><td>A condition the operator must see</td><td>An alarm, raised through <code>AlarmService</code></td></tr>
+        <tr><td>Programming error</td><td>Any other exception. The operation ends, and <code>MachineOperations</code> logs it with its stack trace</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Status strings, <code>bool</code> success values and integer return codes don't go above the driver. A failed write of a settings file is logged and reported, but never stops a running process.</p>
+
+  <h4>Alarms</h4>
+  <p class="prose">Alarms are data, not message boxes. <code>AlarmService</code> in Core raises, clears and acknowledges them, and the alarm banner, alarm history, signal lights and log all read from it. Each alarm records:</p>
+  <ul class="bul">
+    <li>a code, which is also its string-table key (for example <code>Alarm.Motion.Fault</code>);</li>
+    <li>its severity and source device;</li>
+    <li>when it was raised and cleared;</li>
+    <li>who acknowledged it.</li>
+  </ul>
+  <p class="prose">Alarm history is stored alongside the production records.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Severity</th><th>Effect</th><th>To clear</th></tr></thead>
+      <tbody>
+        <tr><td><b>Info</b></td><td>Written to the operator log</td><td>Nothing</td></tr>
+        <tr><td><b>Warning</b></td><td>Banner. Operations continue</td><td>Clears itself when the cause goes away</td></tr>
+        <tr><td><b>Error</b></td><td>Banner. The current operation fails</td><td>Operator acknowledges. The alarm stays until then, even if the cause clears</td></tr>
+        <tr><td><b>Fatal</b></td><td>The machine goes to Alarm and into its safe state</td><td>Operator acknowledges, then the machine resets (homing if needed)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Safe state</h4>
+  <p class="prose">Each machine defines one <code>SafeState</code> routine in Core: stop motion, turn laser emission off and close the shutter, stop marking, and set outputs to their safe values. It runs on a fatal alarm, an emergency stop, an unhandled exception and shutdown. Each step is attempted on its own, so the routine still does what it can when a device has failed. A sequence test covers it.</p>
+  </div>
+
+  <div class="sub" id="data">
+  <h3><span class="num">3.4</span>Data and configuration</h3>
+  <p class="prose">All data a machine reads and writes lives under one data root, separate from the program folder. It is stored in files, never in the registry, so copying the data root backs up or clones a machine. The program folder is replaced on every deployment and treated as read-only.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Category</th><th>Examples</th><th>Changed by</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><b>Factory defaults</b></td><td>Default configuration, calibration patterns</td><td>A release</td><td>Read-only. Copied into the data root only when a file is missing</td></tr>
+        <tr><td><b>Machine configuration</b></td><td>Device addresses, Real/Simulated modes, axis mapping (<code>Hardware.ini</code>)</td><td>Commissioning</td><td>Validated at start-up. An invalid file stops start-up with a clear message</td></tr>
+        <tr><td><b>Machine settings</b></td><td>Speeds, offsets, soft limits, safety height</td><td>Engineers</td><td>Typed settings objects. Every change is audited</td></tr>
+        <tr><td><b>Calibration</b></td><td>Galvo correction table, camera–laser offset, vision templates</td><td>Calibration operations</td><td>The previous file is kept as a backup</td></tr>
+        <tr><td><b>Products (recipes)</b></td><td>Geometry, layers, marks, laser parameters</td><td>Engineers</td><td>A run takes an immutable snapshot when it starts</td></tr>
+        <tr><td><b>Records and logs</b></td><td>Production records, alarm history, logs</td><td>The machine</td><td>Append-only. Always in English</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li>Each file has one owner class that reads and writes it, and nothing else touches the file. Paths come from one <code>MachinePaths</code> class, never from literals.</li>
+    <li>Settings are typed, and validated when loaded. Each default is defined once, in code.</li>
+    <li>Every file carries a schema version, and its owner migrates older versions when it loads them.</li>
+    <li>Writes are atomic: write a temporary file, then replace the old one.</li>
+    <li>Parameter changes are audited with who, when, the old value and the new value, so a changed result can be traced to a changed setting.</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="diagnostics">
+  <h3><span class="num">3.5</span>Logging and traceability</h3>
+  <p class="prose"><strong>Goal:</strong> anything that happens on a machine can be traced back through the software. That covers an alarm the operator saw, an NG piece in the production records, or a crash. The trail leads to the operation that ran, the parameters it used, every device call it made and the line of code that failed. Nothing fails silently.</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 240" role="img" aria-label="Traceability chain. An alarm on the operator screen and a line in the production records both carry the operation id. Filtering the diagnostic log and the crash report by that id leads to the failing log line and its exception with the file and line number.">
+      <defs><marker id="t-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect class="front" x="20" y="30" width="200" height="64" rx="5"/><text class="t" x="36" y="56">Operator screen</text><text class="s" x="36" y="78">alarm shows reference A-0428</text>
+      <rect class="front" x="20" y="146" width="200" height="64" rx="5"/><text class="t" x="36" y="172">Production record</text><text class="s" x="36" y="194">NG piece: RunId, serial no.</text>
+      <rect class="back" x="300" y="88" width="200" height="64" rx="5"/><text class="t" x="316" y="114">OperationId</text><text class="s" x="316" y="136">carried by every log line</text>
+      <rect class="box" x="590" y="30" width="170" height="64" rx="5"/><text class="t" x="606" y="56">Diagnostic log</text><text class="s" x="606" y="78">every line of the operation</text>
+      <rect class="box" x="590" y="146" width="170" height="64" rx="5"/><text class="t" x="606" y="172">Crash report</text><text class="s" x="606" y="194">last 2,000 events + state</text>
+      <rect class="alarm" x="800" y="88" width="140" height="64" rx="5"/><text class="t" x="816" y="114">Exception</text><text class="s" x="816" y="136">stack with file:line</text>
+      <polyline class="ln" points="220,62 260,62 260,110 298,110" marker-end="url(#t-ah)"/><text class="s" x="226" y="54">AlarmId</text>
+      <polyline class="ln" points="220,178 260,178 260,130 298,130" marker-end="url(#t-ah)"/><text class="s" x="226" y="198">RunId</text>
+      <polyline class="ln" points="500,110 545,110 545,62 588,62" marker-end="url(#t-ah)"/>
+      <polyline class="ln" points="500,130 545,130 545,178 588,178" marker-end="url(#t-ah)"/>
+      <text class="s" x="505" y="102">filter</text>
+      <polyline class="ln" points="760,62 870,62 870,86" marker-end="url(#t-ah)"/><text class="s" x="770" y="54">ERR line</text>
+      <polyline class="ln" points="760,178 870,178 870,154" marker-end="url(#t-ah)"/><text class="s" x="770" y="198">Fatal entry</text>
+    </svg>
+    </div>
+    <figcaption><b>One id links what the operator saw to the line of code that failed.</b> Alarms and production records store the OperationId (and RunId), and every log line carries them. Support starts from the reference on the screen or in the records, filters the logs by that id, and reaches the exception with its file and line number.</figcaption>
+  </figure>
+
+  <h4>Log streams</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Stream</th><th>Audience</th><th>Language</th><th>Contents</th><th>Stored in</th></tr></thead>
+      <tbody>
+        <tr><td><b>Operator log</b></td><td>Operators</td><td>UI language</td><td>Alarms, milestones, prompts and the answers given</td><td>Alarm history, beside the production records</td></tr>
+        <tr><td><b>Diagnostic log</b></td><td>Support, developers</td><td>English, structured</td><td>Everything, with the correlation ids below</td><td><code>Logs\diagnostic-yyyyMMdd.log</code> and <code>.clef</code></td></tr>
+        <tr><td><b>Audit log</b></td><td>Quality, supervisors</td><td>English</td><td>Logins, and every change to parameters, recipes, calibration results and bypass flags: who, when, old value, new value</td><td><code>Logs\audit-yyyyMM.log</code>, append-only</td></tr>
+        <tr><td><b>Device trace</b></td><td>Developers</td><td>English</td><td>Raw device commands, replies and packets. Off by default</td><td>The diagnostic log, at Verbose</td></tr>
+        <tr><td><b>Crash reports</b></td><td>Support</td><td>English</td><td>Full exception, machine state, versions and recent events</td><td><code>Logs\Crash\</code>, plus <code>Logs\Dumps\</code> for native crashes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Correlation ids</h4>
+  <p class="prose">These properties are attached through logging scopes and enrichers, so code never adds them to messages by hand.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Property</th><th>Identifies</th><th>Set by</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">SessionId</td><td>One application start</td><td>Composition root</td></tr>
+        <tr><td class="proj">OperationId</td><td>One operation: a run, a calibration, homing, a manual move</td><td><code>MachineOperations</code></td></tr>
+        <tr><td class="proj">RunId</td><td>One production run</td><td><code>ProductionRun</code></td></tr>
+        <tr><td class="proj">PieceId, SerialNumber</td><td>One piece or array position within a run</td><td><code>ProductionRun</code></td></tr>
+        <tr><td class="proj">AlarmId</td><td>One alarm occurrence, shown to the operator as a short reference</td><td><code>AlarmService</code></td></tr>
+        <tr><td class="proj">Device, Command</td><td>A device call</td><td>The driver</td></tr>
+        <tr><td class="proj">User, Role</td><td>The logged-in person</td><td>Access control</td></tr>
+        <tr><td class="proj">ThreadId, SourceContext, MachineName, AppVersion</td><td>Every line</td><td>Enrichers</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Error dialogs and alarms show the operator a short reference, the AlarmId (for example <code>A-0428</code>). Production records carry RunId and OperationId, so an NG piece leads straight to its log lines.</p>
+
+  <h4>Levels</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Level</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td><b>Verbose</b></td><td>Device traffic. Off by default, switched on per driver from configuration</td></tr>
+        <tr><td><b>Debug</b></td><td>Step detail inside operations: positions, intermediate values, retries</td></tr>
+        <tr><td><b>Information</b></td><td>Operation start and end (with parameters, duration and result), state transitions, alarms raised and cleared, configuration and recipe loads, logins</td></tr>
+        <tr><td><b>Warning</b></td><td>Recoverable problems: a retried timeout, a mark not found on the first try, a failed settings write, a Warning alarm, a slow device call</td></tr>
+        <tr><td><b>Error</b></td><td>An operation failed. Always logged with the exception</td></tr>
+        <tr><td><b>Fatal</b></td><td>An unhandled exception. The safe state follows</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Production machines log at Information. An engineer can raise the level to Debug at run time from the engineering screen, with no restart, and it returns to Information on the next start. Even at Information, the last 2,000 events at every level are kept in memory for crash reports.</p>
+
+  <h4>Logging rules</h4>
+  <ol class="rules lg">
+    <li><b>Structured messages.</b> Log through <code>ILogger&lt;T&gt;</code> with message templates and named properties, such as <code>_log.LogInformation("Moved {Axis} to {Position} mm", axis, pos)</code>, never string interpolation.
+      <span class="why">The values stay searchable fields. Analyzer CA2254 makes a non-constant template a build error.</span></li>
+    <li><b>Every operation logs its start and end once, in one place.</b> <code>MachineOperations</code> logs the name, parameters and recipe checksum at start, and the result and duration at the end. Individual operations don't repeat this.</li>
+    <li><b>Every state transition and alarm change is logged.</b> That covers machine mode, run state, and each alarm raise, clear and acknowledgement, with the ids and the user.</li>
+    <li><b>Device failures carry their context.</b> The device, the command, the vendor error code and the <code>HardwareException</code> with the SDK exception as its inner exception. Successful device traffic is Verbose only.</li>
+    <li><b>Log an exception once, where it is handled, with the exception object.</b> Use <code>_log.LogError(ex, …)</code>, never <code>ex.Message</code>. Layers in between don't log and rethrow.
+      <span class="why">One exception then produces one Error entry with its full stack, not five partial copies.</span></li>
+    <li><b>No silent catch.</b> Every <code>catch</code> does one of three things: rethrows; handles the problem and logs a Warning; or converts the exception to a <code>HardwareException</code> with the original as inner. A source-scan test finds empty catch blocks.</li>
+    <li><b>Operator decisions are on record.</b> Every prompt and its answer is logged, for example "operator confirmed start with door open".</li>
+    <li><b>Know exactly what ran.</b> Loading configuration, recipes or calibration logs the file, its schema version and a short SHA-256 checksum. The production record stores the recipe checksum too.</li>
+    <li><b>No secrets.</b> Passwords never appear in any log, and personal data only as the login name.</li>
+    <li><b>Logging never stops the machine.</b> Sinks are asynchronous, and a failing sink is reported but never blocks or throws into machine code.</li>
+  </ol>
+
+  <h4>Storage and retention</h4>
+  <ul class="bul">
+    <li><b>Two formats of the same events.</b> A text file (<code>diagnostic-yyyyMMdd.log</code>) is for reading. A compact JSON file (<code>.clef</code>) is for tools such as Seq, jq or a spreadsheet import. A new file starts each day, or when one reaches 200 MB.</li>
+    <li><b>Retention:</b>
+      <ul>
+        <li>diagnostic logs: 180 days;</li>
+        <li>crash reports and dumps: one year;</li>
+        <li>audit log, alarm history and production records: never deleted by the application.</li>
+      </ul></li>
+    <li><b>Timestamps</b> are local time with milliseconds and the UTC offset. The machine clock is NTP-synchronised at commissioning, so logs from the machine, MES and other equipment line up.</li>
+    <li><b>Disk space</b> is checked at start-up and every hour. A Warning alarm is raised below a threshold, so logs never fill the data drive unnoticed.</li>
+    <li><b>Support package:</b> one command zips the recent logs, crash reports, audit log, alarm history, configuration and versions.</li>
+  </ul>
+
+  <h4>Serilog behind <code>ILogger&lt;T&gt;</code></h4>
+  <p class="prose">Core, Presentation, Platform and drivers reference only <code>Microsoft.Extensions.Logging.Abstractions</code>, and never Serilog. The host configures Serilog once, in the composition root.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Package</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">Serilog, Serilog.Extensions.Logging</td><td>The logger, connected to <code>ILogger&lt;T&gt;</code> and the DI container</td></tr>
+        <tr><td class="proj">Serilog.Sinks.File, Serilog.Sinks.Async</td><td>Daily log files, written off the calling thread</td></tr>
+        <tr><td class="proj">Serilog.Formatting.Compact</td><td>The <code>.clef</code> JSON format</td></tr>
+        <tr><td class="proj">Serilog.Exceptions</td><td>Exception properties as searchable fields: <code>HardwareException</code> code and device, inner and aggregate exceptions</td></tr>
+        <tr><td class="proj">Serilog.Enrichers.Thread, Serilog.Enrichers.Environment</td><td>Thread id and machine name on every line</td></tr>
+        <tr><td class="proj">Serilog.Sinks.Seq <span class="tag">optional</span></td><td>Live log search on a developer or support PC</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="codehead">&lt;Machine&gt;.exe / Composition / LoggingModule.cs</p>
+<pre><span class="k">var</span> level = <span class="k">new</span> LoggingLevelSwitch(LogEventLevel.Information);    <span class="c">// raised to Debug from the engineering screen</span>
+
+Log.Logger = <span class="k">new</span> LoggerConfiguration()
+    .MinimumLevel.ControlledBy(level)
+    .MinimumLevel.Override(<span class="k">"LTT.Hardware"</span>, LogEventLevel.Warning)   <span class="c">// device trace off unless enabled</span>
+    .Enrich.FromLogContext()                                         <span class="c">// OperationId, RunId, Device, User from scopes</span>
+    .Enrich.WithThreadId()
+    .Enrich.WithMachineName()
+    .Enrich.WithExceptionDetails()
+    .Enrich.WithProperty(<span class="k">"SessionId"</span>, sessionId)
+    .Enrich.WithProperty(<span class="k">"AppVersion"</span>, appVersion)
+    .WriteTo.Async(a =&gt; a.File(logs + <span class="k">"\\diagnostic-.log"</span>,
+        rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 200_000_000, rollOnFileSizeLimit: <span class="k">true</span>,
+        outputTemplate: <span class="k">"{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] (T{ThreadId}) {OperationId} {SourceContext}: {Message:lj}{NewLine}{Exception}"</span>))
+    .WriteTo.Async(a =&gt; a.File(<span class="k">new</span> CompactJsonFormatter(), logs + <span class="k">"\\diagnostic-.clef"</span>,
+        rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 200_000_000, rollOnFileSizeLimit: <span class="k">true</span>))
+    .WriteTo.Sink(recentEvents, LogEventLevel.Verbose)               <span class="c">// ring buffer of the last 2,000 events, for crash reports</span>
+    .CreateLogger();
+
+services.AddLogging(b =&gt; b.AddSerilog(dispose: <span class="k">true</span>));   <span class="c">// flushes on shutdown</span></pre>
+  <p class="prose">The ring buffer receives every level, so the <code>MinimumLevel</code> above applies to the files only. Deleting files past their retention period is a small start-up job, because <code>retainedFileCountLimit</code> counts files, not days.</p>
+
+  <p class="codehead">LTT.&lt;Machine&gt;.Core / Operations / MachineOperations.cs: the one place operations start, end and fail</p>
+<pre><span class="k">using</span> (_log.BeginScope(<span class="k">new</span> Dictionary&lt;<span class="k">string</span>, <span class="k">object</span>&gt; { [<span class="k">"OperationId"</span>] = op.Id, [<span class="k">"Operation"</span>] = op.Name }))
+{
+    _log.LogInformation(<span class="k">"{Operation} started {@Parameters}"</span>, op.Name, op.Parameters);
+    <span class="k">var</span> started = _time.GetTimestamp();
+    <span class="k">try</span>
+    {
+        <span class="k">await</span> op.RunAsync(ct).ConfigureAwait(<span class="k">false</span>);
+        _log.LogInformation(<span class="k">"{Operation} completed in {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+    }
+    <span class="k">catch</span> (OperationCanceledException)
+    {
+        _log.LogInformation(<span class="k">"{Operation} cancelled after {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+        <span class="k">throw</span>;
+    }
+    <span class="k">catch</span> (Exception ex)
+    {
+        _log.LogError(ex, <span class="k">"{Operation} failed after {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+        _alarms.Raise(AlarmCodes.OperationFailed, ex);                <span class="c">// the alarm keeps this OperationId</span>
+        <span class="k">throw</span>;
+    }
+}</pre>
+
+  <p class="codehead">Logs\diagnostic-20260928.log (example)</p>
+<pre>2026-09-28 14:03:12.418 +08:00 [INF] (T9)  7F3A LTT.&lt;Machine&gt;.Operations.MachineOperations: ProductionRun started {"Recipe":"PANEL-231","RecipeSha":"9c41e2d0"}
+2026-09-28 14:03:15.902 +08:00 [ERR] (T14) 7F3A LTT.&lt;Machine&gt;.Operations.MachineOperations: ProductionRun failed after 00:00:03.484
+LTT.Hardware.HardwareException: Following error on axis X (Device=MotionController, Code=DeviceFault, Vendor=A3200 0x1802)
+   at LTT.Hardware.Aerotech.A3200MotionController.MoveLinearAsync(...) in A3200MotionController.cs:line 212
+   at LTT.&lt;Machine&gt;.Machine.Stage.MoveToAsync(...) in Stage.cs:line 88
+   at LTT.&lt;Machine&gt;.Production.ProductionRun.RunAsync(...) in ProductionRun.cs:line 141
+2026-09-28 14:03:15.905 +08:00 [WRN] (T14) 7F3A LTT.&lt;Machine&gt;.State.AlarmService: Alarm A-0428 OperationFailed raised (Error)</pre>
+  </div>
+
+  <div class="sub" id="crashes">
+  <h3><span class="num">3.6</span>Exceptions, crashes and hangs</h3>
+  <p class="prose">Every failure, handled or not, has to leave a complete stack trace and enough context to explain it without reproducing it on the machine.</p>
+
+  <h4>Keeping the stack trace</h4>
+  <ul class="bul">
+    <li><b>Ship the PDB files.</b> Release builds produce portable PDBs (<code>&lt;DebugType&gt;portable&lt;/DebugType&gt;</code>) and deploy them next to every assembly. Stack traces then include file names and line numbers; .NET Framework reads portable PDBs for this from version 4.7.2.</li>
+    <li><b>Rethrow correctly.</b> Use <code>throw;</code> and never <code>throw ex;</code>, which discards the original stack. When wrapping, pass the original as <code>InnerException</code>. To rethrow on another thread, use <code>ExceptionDispatchInfo.Capture(ex).Throw()</code>.</li>
+    <li><b>Keep the vendor's detail.</b> Drivers turn SDK errors into a <code>HardwareException</code> carrying the device, command and vendor error code, with the SDK exception as inner, so the vendor's own message and stack survive.</li>
+    <li><b>Exceptions become fields.</b> <code>Serilog.Exceptions</code> writes exception properties, inner exceptions and <code>AggregateException</code> children as structured fields, which makes them searchable in the <code>.clef</code> log.</li>
+  </ul>
+
+  <h4>Unhandled exceptions</h4>
+  <ol class="steps">
+    <li><b>Handlers are installed first,</b> in <code>Program.Main</code> before the container is built: <code>AppDomain.UnhandledException</code>, <code>Application.ThreadException</code> and <code>TaskScheduler.UnobservedTaskException</code>.</li>
+    <li><b>Log Fatal</b> with the full exception.</li>
+    <li><b>Write a crash report</b> to <code>Logs\Crash\crash-yyyyMMdd-HHmmss.txt</code>. It contains:
+      <ul>
+        <li>the exception with its full stack;</li>
+        <li>SessionId, and the current OperationId and RunId;</li>
+        <li>the machine and run state;</li>
+        <li>the application, driver and SDK versions, and the hardware profile;</li>
+        <li>the last 2,000 log events from the ring buffer, at every level.</li>
+      </ul></li>
+    <li><b>Run the safe state,</b> then flush the logs (<code>Log.CloseAndFlush()</code>).</li>
+    <li><b>Tell the operator and close.</b> The operator sees a message with the crash report's reference. The application then closes, because an unhandled exception leaves it in an unknown state. The next start-up screen shows the previous crash's reference.</li>
+  </ol>
+
+  <h4>Native crashes and hangs</h4>
+  <ul class="bul">
+    <li><b>Crash dumps for vendor DLLs.</b> A crash inside native vendor code (an access violation) can end the process before any .NET handler runs. Commissioning therefore turns on Windows Error Reporting local dumps for the application: <code>HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\&lt;Machine&gt;.exe</code>, with <code>DumpFolder</code> set to <code>&lt;data root&gt;\Logs\Dumps</code>, <code>DumpType=2</code> (full) and <code>DumpCount=5</code>. A dump opens in Visual Studio or WinDbg together with the PDBs.</li>
+    <li><b>UI watchdog.</b> A background timer posts a heartbeat to the UI thread every second. If a heartbeat waits more than 5 s, the watchdog logs a Warning naming the current operation and the last device call. After 30 s it writes a process dump (<code>MiniDumpWriteDump</code>) to <code>Logs\Dumps</code>, which shows where every thread is stuck.</li>
+    <li><b>Slow device calls.</b> <code>DeviceGate</code> and <code>DeviceWorker</code> log a Warning when a call takes longer than its expected time, naming the device and the command. A stuck SDK call becomes visible before it turns into a hang.</li>
+  </ul>
+
+  <h4>Verifying traceability</h4>
+  <ul class="bul">
+    <li>A sequence test with a recording logger checks that every operation logs its start and end with its OperationId.</li>
+    <li>A fault-injection test makes a simulated driver throw. It then checks for exactly one Error line with the exception and stack, an alarm with the same OperationId, and an NG record with the RunId.</li>
+    <li>A test raises an unhandled exception and checks that the crash report is written and the safe state runs.</li>
+    <li>Guard rails: CA2254 is a build error, and a source scan fails on empty <code>catch</code> blocks and on <code>throw ex;</code>.</li>
+  </ul>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-quality">
+  <div class="part-head"><span class="part-no">Part 4</span><h2>Quality</h2><p>How the architecture stays correct as it changes: tests, automated checks and maintenance rules.</p></div>
+
+  <div class="sub" id="testing">
+  <h3><span class="num">4.1</span>Testing</h3>
+  <p class="prose">The layers are designed so that almost everything can be tested without a machine. There are three kinds of test.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Kind</th><th>Covers</th><th>Runs</th></tr></thead>
+      <tbody>
+        <tr><td><b>Unit</b></td><td>One class in isolation: state machines, policies, calculations, view models, and driver protocol encoding against a device emulator</td><td>Every build</td></tr>
+        <tr><td><b>Device contract</b></td><td>One shared suite per device contract. It runs against the simulator and against the real driver</td><td>Simulator: every build. Real driver: on the machine</td></tr>
+        <tr><td><b>Sequence</b></td><td>Whole operations on the simulators through the machine harness. For production-path changes, the run's production record must match the previous build's</td><td>Every build</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Architecture checks (dependencies, threading analyzers, ratchets) are covered in <a href="#guards">4.2 Guard rails</a>. On the machine, the device contract tests run first, followed by the commissioning checklist.</p>
+
+  <h4>Device contract tests keep simulators honest</h4>
+  <p class="prose">One abstract test class per contract states what every implementation must do. The simulator's subclass runs on every build. The real driver's subclass runs on the machine. A simulator that drifts away from the real device then fails a test, instead of letting a sequence test pass for the wrong reason.</p>
+<pre><span class="k">public abstract class</span> MotionControllerContract
+{
+    <span class="k">protected abstract</span> IMotionController Create();
+
+    [TestMethod] <span class="k">public async</span> Task Move_completes_in_position() { … }
+    [TestMethod] <span class="k">public async</span> Task Cancel_aborts_the_move_and_throws() { … }
+    [TestMethod] <span class="k">public async</span> Task Move_beyond_soft_limit_is_rejected() { … }
+}
+
+[TestClass] <span class="k">public class</span> SimMotionControllerTests : MotionControllerContract { … }
+[TestClass, TestCategory(<span class="k">"Hardware"</span>)] <span class="k">public class</span> A3200MotionControllerTests : MotionControllerContract { … }</pre>
+
+  <h4>Virtual time</h4>
+  <p class="prose">Delays, timeouts, polling intervals and simulated motion all read time from <code>TimeProvider</code>. On .NET Framework this comes from the <code>Microsoft.Bcl.TimeProvider</code> package; .NET 8 has it built in. Tests use <code>FakeTimeProvider</code> to advance time explicitly. A full production run then takes seconds in a test and runs the same way every time. Nothing below the view layer calls <code>Thread.Sleep</code> or <code>DateTime.Now</code> directly.</p>
+
+  <h4>The machine harness</h4>
+  <p class="prose">One test helper builds the real Core services over the simulators. It uses a temporary data root, a recording logger and a scripted operator prompt, and it wires them with the same <code>Add…()</code> helpers as the composition root. Sequence tests and view-model tests share it.</p>
+  </div>
+
+  <div class="sub" id="guards">
+  <h3><span class="num">4.2</span>Guard rails</h3>
+  <p class="prose">A rule holds only while breaking it fails the build. These checks keep the architecture from decaying.</p>
+  <ol class="rules gr">
+    <li><b>Tests, not scripts.</b> Every check is an MSTest test or an analyzer that runs in the normal build.</li>
+    <li><b>No vacuous passes.</b> Every source scan asserts that it found files. A scan of zero files fails.</li>
+    <li><b>Threading analyzers.</b> <code>Microsoft.VisualStudio.Threading.Analyzers</code> catches <code>async void</code>, synchronous waits and forgotten tasks. CA2007 requires <code>ConfigureAwait(false)</code> in Core, Platform and drivers. Both are build errors.</li>
+    <li><b>Boundary tests.</b> The dependency table in <a href="#assemblies">1.3 Assemblies and dependencies</a> is checked on the compiled assemblies. Drivers must not call <code>Loc</code>.</li>
+    <li><b>Ratchets only go down.</b> Legacy patterns in views and view models (<code>async void</code>, <code>Task.Run</code>, <code>.Enabled =</code>, <code>MessageBox.Show</code>, <code>Invoke(</code>) are counted, along with files that don't yet have nullable reference types enabled. Each view model has a ceiling on constructor parameters. The pull request that removes code lowers the baseline. Raising one needs a stated reason in review.</li>
+    <li><b>The container builds.</b> One test builds the container in simulation mode and resolves the main window and every page.</li>
+    <li><b>The production record is compared on production-path changes.</b> See sequence tests in <a href="#testing">4.1 Testing</a>.</li>
+    <li><b>Logging checks.</b> CA2254 (constant message templates) is a build error. A source scan fails on empty <code>catch</code> blocks and on <code>throw ex;</code>. See 3.5 and 3.6.</li>
+    <li><b>Numbers live in tests, not documents.</b> Documents describe rules and decisions. Counts that change go in the ratchet tests.</li>
+  </ol>
+  <p class="prose">Every push builds the solution and runs every test except the <code>Hardware</code> category, all in simulation.</p>
+  </div>
+
+  <div class="sub" id="maintain">
+  <h3><span class="num">4.3</span>Maintenance and versioning</h3>
+  <ul class="bul">
+    <li><strong>Packages.</strong> Once a second machine uses them, the Platform and drivers move to their own repository and become versioned packages on an internal NuGet feed. Each machine pins the versions it uses. Contract changes are additive within a major version.</li>
+    <li><strong>Project files.</strong> All projects are SDK-style. <code>Directory.Build.props</code> holds shared properties. Central Package Management (<code>Directory.Packages.props</code>) keeps every assembly on the same package versions.</li>
+    <li><strong>Runtime.</strong> Hosts and drivers stay on .NET Framework (4.7.2 or later) as long as the vendor SDKs require it. The UI-free assemblies (Platform, Core, Presentation) target .NET Standard 2.0, so they can move to .NET 8 without changes when the SDKs allow.</li>
+    <li><strong>Language.</strong> <code>Directory.Build.props</code> sets <code>LangVersion</code> to <code>12</code> and <code>Nullable</code> to <code>enable</code> for every assembly. <a href="https://github.com/Sergio0694/PolySharp">PolySharp</a>, a source generator, adds the attributes .NET Framework lacks for records, <code>init</code>, <code>required</code>, index and range, and the nullable annotations.
+      <ul>
+        <li><b>Use freely:</b> records, <code>init</code>, <code>required</code> members, switch expressions and patterns, file-scoped namespaces, global usings, primary constructors, collection expressions.</li>
+        <li><b>Not available on .NET Framework</b> (they need runtime support): default interface members, static abstract interface members, covariant return types.</li>
+        <li><b>Nullable warnings</b> are errors in the Platform and in new assemblies. Existing code turns them on file by file (<code>#nullable enable</code>) as it is touched, and a ratchet (G5) counts the files still without it.</li>
+        <li><b>Raising the pin</b> to C# 13 or 14 is a one-line change, made once every developer and the build server are on a toolchain that supports it.</li>
+      </ul></li>
+    <li><strong>Decision records.</strong> Each architectural decision gets a short ADR in the repository (<code>docs/adr/NNNN-title.md</code>) with its reasoning and alternatives. This document states the outcomes.</li>
+    <li><strong>A README per assembly</strong> covers its purpose, what it may reference and how to test it.</li>
+    <li><strong>Change discipline.</strong> Every commit builds, passes all tests and starts in simulation. Behaviour changes go in their own commits and are listed for machine verification. Refactoring commits don't change behaviour.</li>
+  </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-evolution">
+  <div class="part-head"><span class="part-no">Part 5</span><h2>Evolution</h2><p>Using the architecture for a new machine, and moving the front end to WPF.</p></div>
+
+  <div class="sub" id="newmachine">
+  <h3><span class="num">5.1</span>Building a new machine</h3>
+  <div class="two">
+    <div class="panel">
+      <h4>Reused as-is</h4>
+      <ul>
+        <li><code>LTT.Platform</code>: contracts, device threading, bus, commands, localization</li>
+        <li><code>LTT.UI.WinForms</code>: <code>LocUi</code>, <code>JogPad</code>, binding helpers, device panels</li>
+        <li>The drivers for the hardware it shares, including <code>Protocols</code></li>
+        <li><code>LTT.Hardware.Simulation</code> and <code>SimWorld</code>, so the machine runs on a laptop from day one</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>Written for the machine</h4>
+      <ul>
+        <li><code>LTT.&lt;Machine&gt;.Core</code>: machine model, safety policy, safe state, operations, storage</li>
+        <li><code>LTT.&lt;Machine&gt;.Presentation</code>: view models</li>
+        <li><code>&lt;Machine&gt;.exe</code>: views and composition root</li>
+        <li><code>LTT.&lt;Machine&gt;.Tests</code> and a <code>SimWorldProfile</code></li>
+      </ul>
+    </div>
+  </div>
+  <ol class="steps">
+    <li><span class="h">Start from the template</span><span class="meta">the four machine assemblies, <code>Program.cs</code>, the data-root layout</span><p>Everything builds and starts in simulation before any machine code is written.</p></li>
+    <li><span class="h">Describe the hardware</span><span class="meta"><code>Hardware.ini</code>, driver references</span><p>Missing hardware gets a new <code>LTT.Hardware.&lt;Vendor&gt;</code> driver that implements an existing contract, a simulator, and the contract tests. Add a new contract only for a new kind of device.</p></li>
+    <li><span class="h">Model the machine</span><span class="meta">axes, signals, stations, safety policy, safe state</span><p>Also the <code>SimWorldProfile</code>, so the simulation behaves like this machine.</p></li>
+    <li><span class="h">Write the operations</span><span class="meta">with sequence tests in simulation</span><p>Each sequence runs end to end on a laptop before it runs on the machine.</p></li>
+    <li><span class="h">Write the view models, then the views</span><span class="meta">view-model tests first</span><p>The views stay thin enough to review at a glance.</p></li>
+    <li><span class="h">Commission</span><span class="meta">on the machine</span><p>Run the <code>Hardware</code> contract tests, then the commissioning checklist.</p></li>
+  </ol>
+  </div>
+
+  <div class="sub" id="wpf">
+  <h3><span class="num">5.2</span>The WPF path</h3>
+  <p class="prose">Nothing below the view layer changes when WPF arrives. The migration goes page by page, and the application can ship after every step.</p>
+  <ol class="steps">
+    <li><span class="h">Every page has a view model</span><span class="meta">prerequisite</span><p>WinForms views bind to them. Everything after this depends on it.</p></li>
+    <li><span class="h">Add LTT.UI.Wpf</span><span class="meta">one assembly</span><p>WPF versions of <code>JogPad</code> and the device panels, and a font helper that matches <code>LocUi</code> (the font family per language comes from <code>languages.tsv</code>). The event bus and commands already work in WPF.</p></li>
+    <li><span class="h">Host WPF pages inside the WinForms window</span><span class="meta">ElementHost, one page at a time</span><p>Each migrated page gets a XAML view over the same view model. Operators see one application throughout.</p></li>
+    <li><span class="h">Switch the main window to WPF</span><span class="meta">WindowsFormsHost for the rest</span><p>Pages not yet migrated, and any vendor screen the operator uses, are hosted in <code>WindowsFormsHost</code>. Controls on owner threads are unaffected, because they are never shown.</p></li>
+    <li><span class="h">.NET 8 (separate decision)</span><span class="meta">optional</span><p>The UI-free assemblies are already .NET Standard 2.0. Check each vendor SDK on .NET 8 x64 first; native SDKs and ActiveX controls are the risks.</p></li>
+  </ol>
+  <div class="callout warm">
+    <p><strong>Known WPF limit:</strong> WinForms content hosted in WPF always draws on top ("airspace"). Give vendor screens such as AISYS VAlign their own regions, with no WPF popups or overlays above them.</p>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-decisions">
+  <div class="part-head"><span class="part-no">Part 6</span><h2>History</h2><p>How this document has changed.</p></div>
+
+  <div class="sub" id="history">
+  <h3><span class="num">6.1</span>Revisions</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Version</th><th>Date</th><th>Changes</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">v1</td><td>24 Sep 2026</td><td>First draft: four layers, MVVM front end, DI, threading rules, event bus and machine state, the WPF path.</td></tr>
+        <tr><td class="proj">v2</td><td>25 Sep 2026</td><td>After a review of an existing machine codebase: device threading models, <code>DeviceGate</code> and <code>DeviceWorker</code>, one error model, the motion safety policy, <code>SimWorld</code>, the run state machine, event rules, rule T8, guard rails.</td></tr>
+        <tr><td class="proj">v2.1</td><td>25 Sep 2026</td><td>Decisions D1–D4 agreed.</td></tr>
+        <tr><td class="proj">v3</td><td>25 Sep 2026</td><td>Made independent of any one machine: content about a specific machine and its current code moved to that machine's own documents. Restructured by layer. Added:
+          <ul>
+            <li>the assembly dependency table;</li>
+            <li>errors, alarms and safe state;</li>
+            <li>data and configuration;</li>
+            <li>logging and diagnostics;</li>
+            <li>a testing strategy with contract tests and virtual time;</li>
+            <li>maintenance and versioning;</li>
+            <li>threading analyzers;</li>
+            <li>resources for multi-station machines;</li>
+            <li>decisions D5–D10 and open questions O1–O2.</li>
+          </ul></td></tr>
+        <tr><td class="proj">v3.1</td><td>25 Sep 2026</td><td>O1 and O2 settled. D11: C# 12, pinned, with nullable reference types and PolySharp (moving to a newer version agreed). D12: Serilog behind <code>ILogger&lt;T&gt;</code>, with its packages and configuration. Code samples updated to C# 12.</td></tr>
+        <tr><td class="proj">v3.2</td><td>25 Sep 2026</td><td>The shared UI assemblies are renamed <code>LTT.UI.WinForms</code> / <code>LTT.UI.Wpf</code> and belong to the view layer (D13). The Platform references no UI framework, and its UI-thread invoker is built on <code>SynchronizationContext</code>. Added ActiveX hosting guidance from vendor research: owner thread with a hidden window is preferred, UI-bound only for vendor screens (D14). Drivers no longer reference any UI assembly.</td></tr>
+        <tr><td class="proj">v3.3</td><td>25 Sep 2026</td><td>Reorganised into six parts (Overview, Layers, Cross-cutting concerns, Quality, Evolution, Decisions and history) with numbered sub-sections and a contents block. No change to the content.</td></tr>
+        <tr><td class="proj">v3.4</td><td>25 Sep 2026</td><td><code>LTT.UI.WinForms</code> moved next to the exe in the dependency table, since it belongs to the view layer. The Trade-offs and Decisions sections were removed; decisions are kept as ADRs in the repository. Testing reduced to three kinds: unit, device contract, sequence.</td></tr>
+        <tr><td class="proj">v3.5</td><td>28 Sep 2026</td><td>Logging specification for full traceability. 3.5 is renamed "Logging and traceability" and adds: log streams including an audit log; correlation ids; the level policy; logging rules L1–L10; storage and retention; an updated Serilog set-up; operation logging code and an example log. New 3.6 "Exceptions, crashes and hangs" covers PDB deployment, rethrow rules, crash reports with a ring buffer, native crash dumps, the UI watchdog and traceability tests. A logging guard rail was added.</td></tr>
+        <tr><td class="proj">v3.6</td><td>28 Sep 2026</td><td>Diagnostic log retention raised to 180 days, and log files now roll over at 200 MB.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+</section>
+
+
+<footer>
+  Code samples use C# 12 (D11), and their names are illustrative.
+</footer>
+
+</div>
