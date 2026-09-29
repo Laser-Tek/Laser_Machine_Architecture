@@ -1,0 +1,1389 @@
+<title>LTT 機台架構</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EDF0EF; --surface:#FFFFFF; --surface-2:#F5F7F6; --ink:#15201C; --ink-2:#3B4743; --muted:#63706B;
+  --line:#C6CFCB; --line-soft:#DCE2DF;
+  --accent:#0A6C7D; --accent-soft:#DCECEF;
+  --warm:#955800; --warm-soft:#F4E5CA;
+  --bad:#A8322A; --bad-soft:#F6DEDB;
+  --code-bg:#F2F5F4;
+  --sans:"IBM Plex Sans", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", system-ui, sans-serif;
+  --cond:"IBM Plex Sans Condensed", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Arial Narrow", "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", Consolas, "Cascadia Mono", "Noto Sans TC", "Microsoft JhengHei", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1513; --surface:#172020; --surface-2:#1B2523; --ink:#E3EAE7; --ink-2:#BAC6C1; --muted:#8C9A95;
+    --line:#34423E; --line-soft:#26312E;
+    --accent:#5CC2D2; --accent-soft:#143339;
+    --warm:#E5A54B; --warm-soft:#3A2C15;
+    --bad:#F07A6E; --bad-soft:#3D1D1A;
+    --code-bg:#131B19;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1513; --surface:#172020; --surface-2:#1B2523; --ink:#E3EAE7; --ink-2:#BAC6C1; --muted:#8C9A95;
+  --line:#34423E; --line-soft:#26312E;
+  --accent:#5CC2D2; --accent-soft:#143339;
+  --warm:#E5A54B; --warm-soft:#3A2C15;
+  --bad:#F07A6E; --bad-soft:#3D1D1A;
+  --code-bg:#131B19;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.7; padding-inline:20px; padding-block:0 64px}
+.wrap{max-width:1040px; margin:0 auto}
+.prose{max-width:70ch}
+h1,h2,h3{font-family:var(--cond); text-wrap:balance; line-height:1.2; margin:0}
+h1{font-size:clamp(34px,5vw,50px); font-weight:700; letter-spacing:-.01em}
+h2{font-size:30px; font-weight:600; margin-bottom:14px}
+h3{font-size:20px; font-weight:600; margin:28px 0 8px}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
+code{font-family:var(--mono); font-size:.86em; background:var(--code-bg); border:1px solid var(--line-soft); border-radius:3px; padding:0 .3em}
+strong,b{font-weight:600}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+
+header.top{padding-block:48px 28px; border-bottom:1px solid var(--line); margin-bottom:8px}
+header.top .eyebrow{margin-bottom:14px}
+.lede{font-size:19px; line-height:1.6; color:var(--ink-2); max-width:62ch; margin-top:16px}
+
+.glance{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:28px}
+.glance div{background:var(--surface); padding:14px 16px}
+.glance dt{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.glance dd{margin:4px 0 0; font-family:var(--cond); font-size:20px; font-weight:600; line-height:1.25}
+.glance dd small{display:block; font-family:var(--sans); font-size:13px; font-weight:400; color:var(--muted)}
+
+nav.toc{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding-block:10px; margin-bottom:12px}
+nav.toc ul{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 18px}
+nav.toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink-2); text-decoration:none}
+nav.toc a:hover{color:var(--accent); text-decoration:underline}
+
+section.part{padding-block:56px 8px}
+section.part + section.part{border-top:2px solid var(--line)}
+.part-head{margin-bottom:8px}
+.part-no{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+.part-head h2{font-size:38px; font-weight:700; margin-bottom:8px}
+.part-head p{color:var(--muted); max-width:70ch; margin:0}
+.sub{padding-top:36px}
+.sub + .sub{border-top:1px solid var(--line-soft); margin-top:32px}
+.sub > h3{font-size:27px; font-weight:600; margin:0 0 14px}
+.sub > h3 .num{font-family:var(--mono); font-size:15px; font-weight:500; color:var(--muted); margin-right:12px; vertical-align:3px}
+h4{font-family:var(--cond); font-size:20px; font-weight:600; line-height:1.25; margin:28px 0 8px; text-wrap:balance}
+.contents{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:24px 0 8px}
+.contents > div{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:14px 16px}
+.contents .c-part{font-family:var(--cond); font-size:18px; font-weight:600; color:var(--ink); text-decoration:none}
+.contents .c-part span{font-family:var(--mono); font-size:13px; color:var(--accent); margin-right:4px}
+.contents ul{list-style:none; margin:8px 0 0; padding:0}
+.contents li{font-size:14px; margin-bottom:3px}
+.contents li a{color:var(--ink-2); text-decoration:none}
+.contents a:hover{color:var(--accent); text-decoration:underline}
+
+figure{margin:22px 0 26px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:18px 18px 14px}
+.fig-scroll{overflow-x:auto}
+.fig-scroll svg{display:block; width:100%; height:auto; min-width:720px}
+figcaption{font-size:14px; color:var(--muted); margin-top:12px; max-width:80ch; line-height:1.6}
+figcaption b{color:var(--ink-2); font-weight:600}
+
+.dg{color:var(--ink-2); font-family:var(--sans)}
+.dg text{fill:var(--ink)}
+.dg .t{font-size:15px; font-weight:600; font-family:var(--cond)}
+.dg .s{font-size:12px; fill:var(--muted)}
+.dg .m{font-size:11.5px; font-family:var(--mono); fill:var(--ink-2)}
+.dg .n{font-size:12px; fill:var(--ink)}
+.dg .box{fill:var(--surface); stroke:var(--line); stroke-width:1.2}
+.dg .box-2{fill:var(--surface-2); stroke:var(--line); stroke-width:1.2}
+.dg .front{fill:var(--warm-soft); stroke:var(--warm); stroke-width:1.2}
+.dg .back{fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.2}
+.dg .alarm{fill:var(--bad-soft); stroke:var(--bad); stroke-width:1.2}
+.dg .lane-front{fill:var(--warm-soft); opacity:.55}
+.dg .lane{fill:var(--surface-2)}
+.dg .ln{stroke:var(--ink-2); stroke-width:1.5; fill:none}
+.dg .ln-warm{stroke:var(--warm); stroke-width:1.6; fill:none}
+.dg .ln-faint{stroke:var(--line); stroke-width:1; fill:none}
+.dg .dash{stroke-dasharray:5 4}
+.dg .ah{fill:var(--ink-2)}
+.dg .ah-warm{fill:var(--warm)}
+.dg .tw{fill:var(--warm); font-weight:600}
+.dg .ta{fill:var(--accent); font-weight:600}
+.dg .tb{fill:var(--bad)}
+
+table{border-collapse:collapse; width:100%; font-size:14.5px; line-height:1.55}
+.tbl{overflow-x:auto; margin:16px 0 22px; border:1px solid var(--line); border-radius:6px; background:var(--surface)}
+.tbl table{min-width:640px}
+th,td{text-align:left; vertical-align:top; padding:9px 12px; border-bottom:1px solid var(--line-soft)}
+th{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+td.proj{font-family:var(--mono); font-size:13px; white-space:nowrap}
+td ul{margin:4px 0 0; padding-left:18px}
+td li{margin-bottom:2px}
+.tag{display:inline-block; font-family:var(--mono); font-size:11px; padding:1px 6px; border-radius:3px; border:1px solid var(--line); color:var(--muted); white-space:nowrap}
+.tag.new{border-color:var(--accent); color:var(--accent)}
+
+pre{font-family:var(--mono); font-size:13px; line-height:1.55; background:var(--code-bg); border:1px solid var(--line); border-radius:6px; padding:14px 16px; overflow-x:auto; margin:14px 0 20px; color:var(--ink)}
+pre .c{color:var(--muted)}
+pre .k{color:var(--accent)}
+.codehead{font-family:var(--mono); font-size:12px; color:var(--muted); margin:18px 0 -8px}
+
+.rules{list-style:none; padding:0; margin:14px 0 22px; display:grid; gap:0; border:1px solid var(--line); border-radius:6px; background:var(--surface); counter-reset:r}
+.rules li{counter-increment:r; display:grid; grid-template-columns:44px 1fr; gap:4px 12px; padding:12px 16px 12px 10px; border-bottom:1px solid var(--line-soft)}
+.rules li:last-child{border-bottom:0}
+.rules li::before{content:"R" counter(r); font-family:var(--mono); font-size:12px; color:var(--accent); padding-top:3px; text-align:right}
+.rules .why{grid-column:2; font-size:14px; color:var(--muted)}
+.rules.warm li::before{content:"T" counter(r); color:var(--warm)}
+.rules.ev li::before{content:"E" counter(r)}
+.rules.gr li::before{content:"G" counter(r)}
+.rules.dec li::before{content:"D" counter(r)}
+.rules.open li::before{content:"O" counter(r); color:var(--warm)}
+.rules.lg li::before{content:"L" counter(r)}
+
+.steps{list-style:none; padding:0; margin:16px 0; counter-reset:s; display:grid; gap:10px}
+.steps li{counter-increment:s; display:grid; grid-template-columns:40px 1fr; gap:2px 14px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:14px 16px}
+.steps li::before{content:counter(s); grid-row:span 3; font-family:var(--cond); font-size:28px; font-weight:700; color:var(--accent); line-height:1}
+.steps .h{font-weight:600}
+.steps .meta{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.steps p{margin:4px 0 0; font-size:15px}
+
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin:16px 0}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 18px}
+.panel h4{margin-top:0}
+.panel ul{margin:6px 0 0; padding-left:18px}
+.panel li{margin-bottom:4px}
+.bul{margin:10px 0 18px; padding-left:20px; max-width:74ch}
+.bul li{margin-bottom:8px}
+.callout{border-left:3px solid var(--accent); background:var(--surface); padding:12px 16px; margin:18px 0 0; border-radius:0 6px 6px 0}
+.callout p:last-child{margin-bottom:0}
+.callout.warm{border-left-color:var(--warm)}
+
+footer{margin-top:48px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:var(--muted)}
+
+@media (max-width:560px){
+  body{font-size:15.5px}
+  .part-head h2{font-size:30px}
+  .sub > h3{font-size:23px}
+  .lede{font-size:17px}
+  .rules li{grid-template-columns:34px 1fr}
+}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+
+<div class="wrap" lang="zh-Hant-TW">
+
+<header class="top">
+  <div class="eyebrow">軟體架構 · LTT 機台軟體 · v3.6 · 2026 年 9 月 28 日</div>
+  <h1>LTT 機台架構</h1>
+  <p class="lede">LTT 機台控制軟體的參考架構。本文定義四個層、各層的職責，以及讓每台機台都能測試、易於維護，並為 WPF 做好準備的規則。</p>
+
+  <dl class="glance">
+    <div><dt>層</dt><dd>4<small>檢視 · 檢視模型 · Core · Platform 與驅動程式</small></dd></div>
+    <div><dt>UI 模式</dt><dd>MVVM<small>WinForms 與 WPF 共用同一組檢視模型</small></dd></div>
+    <div><dt>容器</dt><dd>MS.Extensions.DI<small>可在 .NET Framework 4.7.2 以上版本執行</small></dd></div>
+    <div><dt>執行緒規則</dt><dd>UI 從不等待<small>Core 從不封送</small></dd></div>
+    <div><dt>技術堆疊</dt><dd>C# 12 · Serilog<small>.NET Framework 主程式、.NET Standard 函式庫</small></dd></div>
+  </dl>
+  <div class="callout">
+    <p><strong>適用範圍。</strong>本文適用於所有 LTT 機台應用程式。特定機台如何採用本架構，以及該機台目前的程式碼狀態，屬於該機台自己的文件。角括號中的名稱，例如 <code>&lt;Machine&gt;</code>，代表該機台自己的名稱。</p>
+  </div>
+</header>
+
+<div class="contents" aria-label="目錄">
+  <div><a class="c-part" href="#part-overview"><span>1</span> 概觀</a><ul>
+    <li><a href="#overview">1.1 各層</a></li>
+    <li><a href="#responsibilities">1.2 職責</a></li>
+    <li><a href="#assemblies">1.3 組件與相依性</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-layers"><span>2</span> 各層</a><ul>
+    <li><a href="#views">2.1 檢視</a></li>
+    <li><a href="#viewmodels">2.2 檢視模型</a></li>
+    <li><a href="#core">2.3 Core：機台與作業</a></li>
+    <li><a href="#platform">2.4 Platform</a></li>
+    <li><a href="#drivers">2.5 驅動程式與模擬</a></li>
+    <li><a href="#composition">2.6 組合根</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-crosscutting"><span>3</span> 橫切關注點</a><ul>
+    <li><a href="#threads">3.1 執行緒</a></li>
+    <li><a href="#events">3.2 事件與機台狀態</a></li>
+    <li><a href="#errors">3.3 錯誤、警報與安全狀態</a></li>
+    <li><a href="#data">3.4 資料與組態</a></li>
+    <li><a href="#diagnostics">3.5 日誌與可追溯性</a></li>
+    <li><a href="#crashes">3.6 例外、當機與無回應</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-quality"><span>4</span> 品質</a><ul>
+    <li><a href="#testing">4.1 測試</a></li>
+    <li><a href="#guards">4.2 防護機制</a></li>
+    <li><a href="#maintain">4.3 維護與版本管理</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-evolution"><span>5</span> 演進</a><ul>
+    <li><a href="#newmachine">5.1 建置新機台</a></li>
+    <li><a href="#wpf">5.2 WPF 遷移路徑</a></li>
+  </ul></div>
+  <div><a class="c-part" href="#part-decisions"><span>6</span> 歷程</a><ul>
+    <li><a href="#history">6.1 修訂紀錄</a></li>
+  </ul></div>
+</div>
+
+<nav class="toc" aria-label="章節">
+  <ul>
+    <li><a href="#part-overview">1 · 概觀</a></li>
+    <li><a href="#part-layers">2 · 各層</a></li>
+    <li><a href="#part-crosscutting">3 · 橫切關注點</a></li>
+    <li><a href="#part-quality">4 · 品質</a></li>
+    <li><a href="#part-evolution">5 · 演進</a></li>
+    <li><a href="#part-decisions">6 · 歷程</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================ -->
+<section class="part" id="part-overview">
+  <div class="part-head"><span class="part-no">第 1 部分</span><h2>概觀</h2><p>四個層是什麼，以及它們彼此如何相依。</p></div>
+
+  <div class="sub" id="overview">
+  <h3><span class="num">1.1</span>各層</h3>
+  <p class="prose">共有四個層，相依性只能向下。組合根是唯一認識所有層的程式碼，並由它決定每個介面背後使用哪一個實作。</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 580" role="img" aria-label="分層示意圖。檢視繫結至檢視模型。檢視模型 await Core 中的作業，Core 則在 UI 執行緒上把事件送回上層。Core 使用 Platform 中的裝置合約，由驅動程式實作這些合約。右側的組合根註冊所有層。檢視模型與 Core 之間的虛線，把在 UI 執行緒上執行的前端，與可在任意執行緒上執行的後端分開。">
+      <defs>
+        <marker id="d1-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d1-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+
+      <rect class="front" x="40" y="30" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="60">檢視</text>
+      <text class="s" x="60" y="84">表單與使用者控制項：版面配置與繫結，不含邏輯</text>
+      <text class="m" x="664" y="60" text-anchor="end">&lt;Machine&gt;.exe</text>
+      <text class="m" x="664" y="84" text-anchor="end">+ LTT.UI.WinForms（共用）</text>
+
+      <rect class="front" x="40" y="130" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="160">檢視模型</text>
+      <text class="s" x="60" y="184">畫面狀態與命令，不含 WinForms 或 WPF 型別</text>
+      <text class="m" x="664" y="160" text-anchor="end">LTT.&lt;Machine&gt;.Presentation</text>
+
+      <line class="ln-faint dash" x1="40" y1="226" x2="680" y2="226"/>
+      <text class="s tw" x="680" y="219" text-anchor="end">▲ 前端 · UI 執行緒</text>
+      <text class="s ta" x="680" y="242" text-anchor="end">▼ 後端 · 任意執行緒</text>
+
+      <rect class="back" x="40" y="250" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="280">機台與作業</text>
+      <text class="s" x="60" y="304">機台模型、作業、狀態機、警報、儲存</text>
+      <text class="m" x="664" y="280" text-anchor="end">LTT.&lt;Machine&gt;.Core</text>
+
+      <rect class="box" x="40" y="350" width="640" height="72" rx="5"/>
+      <text class="t" x="60" y="380">Platform</text>
+      <text class="s" x="60" y="404">裝置合約與執行緒、事件匯流排、命令、在地化</text>
+      <text class="m" x="664" y="380" text-anchor="end">LTT.Platform</text>
+
+      <rect class="box" x="40" y="450" width="640" height="100" rx="5"/>
+      <text class="t" x="60" y="476">驅動程式</text>
+      <text class="m" x="664" y="476" text-anchor="end">LTT.Hardware.*</text>
+      <rect class="box-2" x="60"  y="490" width="80" height="42" rx="3"/><text class="m" x="100" y="515" text-anchor="middle">Aerotech</text>
+      <rect class="box-2" x="148" y="490" width="80" height="42" rx="3"/><text class="m" x="188" y="515" text-anchor="middle">Googol</text>
+      <rect class="box-2" x="236" y="490" width="80" height="42" rx="3"/><text class="m" x="276" y="515" text-anchor="middle">Basler</text>
+      <rect class="box-2" x="324" y="490" width="80" height="42" rx="3"/><text class="m" x="364" y="515" text-anchor="middle">Aisys</text>
+      <rect class="box-2" x="412" y="490" width="80" height="42" rx="3"/><text class="m" x="452" y="515" text-anchor="middle">MarkingMate</text>
+      <rect class="box-2" x="500" y="490" width="80" height="42" rx="3"/><text class="m" x="540" y="515" text-anchor="middle">Protocols</text>
+      <rect class="box-2 dash" x="588" y="490" width="80" height="42" rx="3"/><text class="m" x="628" y="515" text-anchor="middle">Simulation</text>
+
+      <line class="ln" x1="150" y1="102" x2="150" y2="128" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="120">繫結至</text>
+      <line class="ln-warm dash" x1="340" y1="130" x2="340" y2="104" marker-end="url(#d1-aw)"/>
+      <text class="s" x="350" y="120">屬性變更</text>
+      <line class="ln" x1="150" y1="202" x2="150" y2="248" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="214">await 作業</text>
+      <line class="ln-warm dash" x1="340" y1="250" x2="340" y2="204" marker-end="url(#d1-aw)"/>
+      <text class="s" x="350" y="214">事件在 UI 執行緒上送達</text>
+      <line class="ln" x1="150" y1="322" x2="150" y2="348" marker-end="url(#d1-ah)"/>
+      <text class="s" x="160" y="340">使用合約</text>
+      <line class="ln" x1="340" y1="450" x2="340" y2="424" marker-end="url(#d1-ah)"/>
+      <text class="s" x="350" y="441">實作合約</text>
+
+      <rect class="box" x="720" y="30" width="220" height="520" rx="5"/>
+      <text class="t" x="740" y="60">組合根</text>
+      <text class="m" x="740" y="82">Program.cs + Composition/</text>
+      <text class="s" x="740" y="118">讀取 Hardware.ini 與</text>
+      <text class="s" x="740" y="135">命令列參數。</text>
+      <text class="s" x="740" y="166">為每個合約選擇實體</text>
+      <text class="s" x="740" y="183">或模擬驅動程式。</text>
+      <text class="s" x="740" y="214">在同一個 DI 容器中</text>
+      <text class="s" x="740" y="231">註冊所有層。</text>
+      <text class="s" x="740" y="262">執行啟動程序，並在</text>
+      <text class="s" x="740" y="279">關閉時讓機台進入</text>
+      <text class="s" x="740" y="296">安全狀態。</text>
+      <text class="s" x="740" y="327">處置 (Dispose) 所有裝置，</text>
+      <text class="s" x="740" y="344">最新建立者優先。</text>
+      <text class="s" x="740" y="375">其他程式碼都不會對</text>
+      <text class="s" x="740" y="392">服務呼叫 <tspan class="m">new</tspan>。</text>
+      <line class="ln" x1="720" y1="66"  x2="684" y2="66"  marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="166" x2="684" y2="166" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="286" x2="684" y2="286" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="386" x2="684" y2="386" marker-end="url(#d1-ah)"/>
+      <line class="ln" x1="720" y1="500" x2="684" y2="500" marker-end="url(#d1-ah)"/>
+    </svg>
+    </div>
+    <figcaption><b>實線箭頭代表編譯期相依性，虛線箭頭代表執行期通知。</b>虛線同時分隔前端與後端，也分隔執行緒：虛線以上的一切都在 UI 執行緒上執行，虛線以下的一切都不碰 UI。驅動程式相依於 Platform 的合約，絕不反向；只有組合根會參考驅動程式。檢視層包含共用的 UI 工具組 <code>LTT.UI.WinForms</code>（日後為 <code>LTT.UI.Wpf</code>）。名稱中帶有 Platform 的任何東西都不參考 UI 框架。Protocols 方塊中是 LTT 自行透過序列埠或 TCP 撰寫的驅動程式：Lumentum 雷射、光源控制器與高度感測器。</figcaption>
+  </figure>
+  </div>
+
+  <div class="sub" id="responsibilities">
+  <h3><span class="num">1.2</span>職責</h3>
+  <p class="prose">每一種類別只有一項工作。做了「絕不」欄中事情的類別，就是放錯了層。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>角色</th><th>所屬層</th><th>負責</th><th>絕不</th></tr></thead>
+      <tbody>
+        <tr><td><b>檢視</b></td><td>檢視</td><td>版面配置、繫結、焦點；放置操作員必須使用的廠商畫面</td><td>邏輯、硬體呼叫、建立服務</td></tr>
+        <tr><td><b>檢視模型</b></td><td>檢視模型</td><td>畫面狀態、命令，以及透過 <code>Loc</code> 取得的顯示文字</td><td>參考 WinForms 或 WPF、阻塞、手動封送</td></tr>
+        <tr><td><b>作業</b></td><td>Core</td><td>一段機台流程：非同步且可取消。透過 <code>IOperatorPrompt</code> 詢問操作員</td><td>操作控制項、顯示對話方塊、選擇執行緒</td></tr>
+        <tr><td><b>機台模型</b></td><td>Core</td><td>具名的軸、訊號與工站；安全政策</td><td>參考廠商型別</td></tr>
+        <tr><td><b>狀態機</b></td><td>Core</td><td>管理一個生命週期，並拒絕無效的轉換</td><td>呼叫裝置、進行 I/O、被兩個執行緒寫入</td></tr>
+        <tr><td><b>合約</b></td><td>Platform</td><td>某一類裝置的廠商中立介面</td><td>含有廠商型別或已翻譯的文字</td></tr>
+        <tr><td><b>驅動程式</b></td><td>驅動程式</td><td>與一個 SDK 或通訊協定溝通。擁有自己的執行緒。擲回 <code>HardwareException</code></td><td>含有製程規則、顯示對話方塊、使用 <code>Loc</code></td></tr>
+        <tr><td><b>模擬器</b></td><td>驅動程式</td><td>依據共用的 <code>SimWorld</code> 實作合約</td><td>含有製程規則</td></tr>
+        <tr><td><b>組合根</b></td><td>檢視（主程式）</td><td>選擇實作、將它們串接起來、執行啟動與關閉程序</td><td>其他任何事</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div class="sub" id="assemblies">
+  <h3><span class="num">1.3</span>組件與相依性</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>組件</th><th>所屬層</th><th>可以參考</th><th>絕不參考</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">&lt;Machine&gt;.exe</td><td>檢視、組合根</td><td>以下所有組件、驅動程式組件、<code>LTT.UI.WinForms</code></td><td>（相依圖最上層）</td></tr>
+        <tr><td class="proj">LTT.UI.WinForms</td><td>檢視（共用 UI 工具組）</td><td>Platform</td><td>機台程式碼、驅動程式、廠商 SDK</td></tr>
+        <tr><td class="proj">LTT.&lt;Machine&gt;.Presentation</td><td>檢視模型</td><td>Core、Platform</td><td>WinForms、WPF、<code>System.Drawing</code>、驅動程式</td></tr>
+        <tr><td class="proj">LTT.&lt;Machine&gt;.Core</td><td>機台與作業</td><td>Platform</td><td>任何 UI、驅動程式、廠商 SDK</td></tr>
+        <tr><td class="proj">LTT.Platform</td><td>合約與基礎核心（kernel）</td><td>基礎類別庫與小型抽象套件</td><td>任何 UI、廠商 SDK、機台程式碼</td></tr>
+        <tr><td class="proj">LTT.Hardware.&lt;Vendor&gt;</td><td>驅動程式</td><td>Platform、廠商 SDK。ActiveX 驅動程式另外會在內部使用 <code>System.Windows.Forms</code>，僅用於裝載控制項</td><td>Core、<code>LTT.UI.*</code>、其他驅動程式</td></tr>
+        <tr><td class="proj">LTT.Hardware.Simulation</td><td>驅動程式</td><td>Platform、<code>LTT.Hardware.Protocols</code>（供裝置仿真器使用）</td><td>廠商 SDK、機台程式碼</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">只有出現新的相依邊界時才新增組件：廠商 SDK、UI 技術或機台。其他一律用資料夾。組件內的程式碼依功能分組（<code>Alignment/</code>、<code>Calibration/</code>、<code>Production/</code>），而不是依種類分組（<code>Services/</code>、<code>Models/</code>），這樣修改某個功能時只會動到一個地方。</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-layers">
+  <div class="part-head"><span class="part-no">第 2 部分</span><h2>各層</h2><p>從畫面到硬體，各層的職責、內容與規則，以及把它們串接起來的組合根。</p></div>
+
+  <div class="sub" id="views">
+  <h3><span class="num">2.1</span>檢視</h3>
+  <div class="prose">
+    <p>檢視層分為兩部分。</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>組件</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">&lt;Machine&gt;.exe</td><td>主應用程式：本機台的表單與使用者控制項、組合根，以及下層所需埠（port）的 WinForms 實作（對話方塊服務、操作員提示、檔案對話方塊、日誌面板）。操作員必須使用的廠商畫面也由它放置，例如 AISYS VAlign 的教導畫面。</td></tr>
+        <tr><td class="proj">LTT.UI.WinForms</td><td>所有機台共用、不認識任何機台的 UI 工具組：
+          <ul>
+            <li><code>LocUi</code>（依語言設定字型與文字）。</li>
+            <li><code>Bind(ICommand)</code> 輔助方法。</li>
+            <li><code>JogPad</code>，以及 I/O、相機參數與光源的裝置面板。每個面板都針對裝置合約運作，標籤文字由呼叫端提供。</li>
+          </ul>
+          <code>LTT.UI.Wpf</code> 將是它的 WPF 對應版本。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li>一個檢視只繫結到一個檢視模型，繫結集中寫在建構函式中的一個區塊，除此之外不含任何邏輯。</li>
+    <li>頁面由容器建立，並以程式碼加入主視窗，因此可以接受建構函式參數。每個頁面自己的設計工具仍可正常使用。</li>
+    <li>第二台機台可以原封不動重用的任何東西，都放進 <code>LTT.UI.WinForms</code>，而不是放在機台的 exe 中。</li>
+    <li>文字來自字串表的鍵值，字型來自 <code>LocUi.ApplyFontTree</code>。檢視從不設定字面文字或字型。</li>
+  </ul>
+  <p class="codehead">&lt;Machine&gt;.exe / Production / ProductionView.cs</p>
+<pre><span class="k">internal partial class</span> ProductionView : UserControl
+{
+    <span class="k">public</span> ProductionView(ProductionViewModel vm)
+    {
+        InitializeComponent();
+        lblBlock.DataBindings.Add(<span class="k">"Text"</span>, vm, <span class="k">nameof</span>(vm.BlockText));
+        btnStart.Bind(vm.StartCommand);    <span class="c">// LTT.UI.WinForms：Click → Execute，Enabled ← CanExecute</span>
+        btnStop.Bind(vm.StopCommand);
+    }
+}</pre>
+  </div>
+
+  <div class="sub" id="viewmodels">
+  <h3><span class="num">2.2</span>檢視模型</h3>
+  <div class="prose">
+    <p>MVP 與 MVVM 都能把畫面邏輯與控制項分開。差別在於轉換到 WPF 時，哪些部分能保留下來：</p>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h4>MVP（被動檢視）</h4>
+      <ul>
+        <li>Presenter 透過 <code>IProductionView</code> 介面呼叫 <code>view.SetBlockText(…)</code>。</li>
+        <li>每個畫面都需要這個介面、一個 presenter，以及在 code-behind 中手寫的實作。</li>
+        <li>WPF 與這種風格相抵觸。每個 WPF 畫面都需要一個轉接器，把 presenter 的呼叫轉成可繫結的屬性。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>MVVM（採用）</h4>
+      <ul>
+        <li>檢視模型公開屬性與命令，並引發 <code>PropertyChanged</code>。它對檢視一無所知。</li>
+        <li>.NET Framework 上的 WinForms 原生支援屬性繫結。命令只需要一個小型輔助方法。</li>
+        <li>WPF 不需修改即可繫結<b>同一個類別</b>，因此轉換到 WPF 只需要撰寫新的檢視。</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 230" role="img" aria-label="一個畫面。WinForms 的 ProductionView 與 WPF 的 ProductionView 都繫結到同一個 ProductionViewModel。檢視模型 await Core 中的 ProductionRun，並在 UI 執行緒上接收來自事件匯流排的事件。">
+      <defs>
+        <marker id="d3-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d3-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+      <rect class="front" x="20" y="30" width="230" height="64" rx="5"/>
+      <text class="t" x="40" y="57">ProductionView</text>
+      <text class="s" x="40" y="80">WinForms 使用者控制項</text>
+      <rect class="front dash" x="20" y="150" width="230" height="64" rx="5"/>
+      <text class="t" x="40" y="177">ProductionView.xaml</text>
+      <text class="s" x="40" y="200">WPF · 檢視模型不需修改</text>
+      <rect class="front" x="350" y="30" width="230" height="64" rx="5"/>
+      <text class="t" x="370" y="57">ProductionViewModel</text>
+      <text class="s" x="370" y="80">不含 WinForms 或 WPF 型別</text>
+      <rect class="back" x="730" y="30" width="210" height="64" rx="5"/>
+      <text class="t" x="750" y="57">ProductionRun</text>
+      <text class="s" x="750" y="80">Core 作業</text>
+      <rect class="back" x="730" y="150" width="210" height="64" rx="5"/>
+      <text class="t" x="750" y="177">IEventBus</text>
+      <text class="s" x="750" y="200">RunProgress、狀態變更</text>
+      <line class="ln" x1="250" y1="62" x2="348" y2="62" marker-end="url(#d3-ah)"/>
+      <text class="s" x="299" y="54" text-anchor="middle">繫結</text>
+      <polyline class="ln dash" points="250,182 420,182 420,96" marker-end="url(#d3-ah)"/>
+      <text class="s" x="335" y="174" text-anchor="middle">繫結</text>
+      <line class="ln" x1="580" y1="62" x2="728" y2="62" marker-end="url(#d3-ah)"/>
+      <text class="m" x="655" y="54" text-anchor="middle">await RunAsync(ct)</text>
+      <polyline class="ln-warm dash" points="730,182 520,182 520,96" marker-end="url(#d3-aw)"/>
+      <text class="s" x="625" y="174" text-anchor="middle">事件在 UI 執行緒上送達</text>
+    </svg>
+    </div>
+    <figcaption><b>檢視模型是從 WinForms 帶到 WPF 的單位。</b>WinForms 檢視與 WPF 檢視繫結到同一個類別。它以 <code>await</code> 向下呼叫 Core，並在 UI 執行緒上接收匯流排送來的事件，因此它的屬性只會在該執行緒上變更。</figcaption>
+  </figure>
+
+  <p class="codehead">LTT.&lt;Machine&gt;.Presentation / Production / ProductionViewModel.cs</p>
+<pre><span class="k">internal sealed class</span> ProductionViewModel : ViewModelBase
+{
+    <span class="k">private readonly</span> IProductionRun _run;
+    <span class="k">private string</span> _blockText = <span class="k">""</span>;
+
+    <span class="k">public</span> ProductionViewModel(IProductionRun run, IMachineState state, IEventBus events)
+    {
+        _run = run;
+        StartCommand = <span class="k">new</span> AsyncCommand(ct =&gt; _run.RunAsync(ct), () =&gt; state.Mode == MachineMode.Idle);
+        StopCommand  = <span class="k">new</span> RelayCommand(_run.Stop, () =&gt; state.Mode == MachineMode.Running || state.Mode == MachineMode.Paused);
+        events.Subscribe&lt;RunProgress&gt;(OnProgress);              <span class="c">// 在 UI 執行緒上傳遞</span>
+        events.Subscribe&lt;MachineStateChanged&gt;(_ =&gt; RaiseCanExecuteChanged());
+    }
+
+    <span class="k">public</span> AsyncCommand StartCommand { <span class="k">get</span>; }
+    <span class="k">public</span> RelayCommand StopCommand { <span class="k">get</span>; }
+    <span class="k">public string</span> BlockText { <span class="k">get</span> =&gt; _blockText; <span class="k">private set</span> =&gt; Set(<span class="k">ref</span> _blockText, value); }
+
+    <span class="k">private void</span> OnProgress(RunProgress e) =&gt; BlockText = Loc.Format(<span class="k">"Run.Block"</span>, e.Index + 1, e.Total);
+}</pre>
+
+  <ul class="bul">
+    <li><strong>天生與 UI 無關。</strong><code>ICommand</code> 與 <code>INotifyPropertyChanged</code> 位於基礎類別庫中。<code>ViewModelBase</code>、<code>AsyncCommand</code> 與 <code>RelayCommand</code> 來自 <code>LTT.Platform</code>。</li>
+    <li><strong>只有一個地方把點擊轉成 <code>await</code>。</strong><code>AsyncCommand</code> 在執行期間會停用自己，並記錄任何例外。前端其他地方都沒有 <code>async void</code>。</li>
+    <li><strong>只保存畫面狀態。</strong>檢視模型只保存它的畫面要顯示與編輯的內容。關於機台的事實來自 Core，透過 <code>MachineState</code>、讀取模型與匯流排取得。</li>
+    <li><strong>其他視窗</strong>透過一個泛型的 <code>IDialogService.ShowAsync&lt;TViewModel&gt;()</code> 開啟，它會找出為該檢視模型註冊的檢視。不會有「每個視窗一個方法」的啟動器。</li>
+    <li><strong>保持精簡。</strong>相依項超過大約八個的檢視模型，就是在做作業的工作，這些邏輯應移到 Core。防護機制 G5 會檢查這一點。</li>
+    <li><strong>從第一次提交就開始測試，</strong>透過機台測試夾具在模擬器上執行，並搭配腳本化的對話方塊服務。</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="core">
+  <h3><span class="num">2.3</span>Core：機台與作業</h3>
+  <div class="prose">
+    <p>Core 包含機台所做的一切，不含 UI，也不含廠商程式碼。它是無介面（headless）的：WinForms、WPF、測試夾具，或 MES 連線、維護工具等遠端介面，都以相同方式透過作業來驅動它。</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>區域</th><th>內容</th><th>範例</th></tr></thead>
+      <tbody>
+        <tr><td><b>機台模型</b></td><td>建構在裝置合約之上的具名軸、訊號與工站，加上安全政策</td><td><code>Stage</code>（XY）、Z 軸與 θ 軸、具有具名輸入與輸出的 <code>MachineIo</code>、<code>VisionStation</code>、<code>MotionSafetyPolicy</code></td></tr>
+        <tr><td><b>作業</b></td><td>每段機台流程一個類別</td><td>初始化、產品上料、對位、生產運行、振鏡網格校正、相機–雷射偏移、尋焦、功率校正、手動運動</td></tr>
+        <tr><td><b>狀態</b></td><td>生命週期與警報</td><td><code>MachineState</code>、<code>ProductionRun</code>、<code>AlarmService</code></td></tr>
+        <tr><td><b>儲存</b></td><td>Core 所擁有資料的埠，以及它們的檔案實作</td><td><code>IProductRepository</code>、<code>ICalibrationStore</code>、<code>IProductionRecordSink</code>、<code>ISettingsStore</code></td></tr>
+        <tr><td><b>主程式埠</b></td><td>Core 需要應用程式提供的東西</td><td><code>IOperatorPrompt</code>、<code>ILogger&lt;T&gt;</code>、<code>IEventBus</code>、<code>TimeProvider</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>作業</h4>
+  <ul class="bul">
+    <li>作業是 <code>async Task</code>，並接受 <code>CancellationToken</code>。它透過 <code>MachineOperations</code> 執行；<code>MachineOperations</code> 讓作業獨占它所指名的資源、設定機台狀態，並掌管取消。</li>
+    <li>作業使用機台模型，而只有機台模型使用裝置合約。共用步驟，例如在安全高度移動或尋找標記，屬於機台模型，絕不在作業之間複製。</li>
+    <li>作業透過事件回報進度，並透過 <code>IOperatorPrompt</code> 詢問操作員。它們從不顯示 UI。</li>
+    <li>參數以不可變快照的形式傳入。一次運行在開始時讀取一次產品與設定，運行期間所做的編輯不會影響它。</li>
+  </ul>
+
+  <h4>運動安全政策</h4>
+  <p class="prose"><code>MotionSafetyPolicy</code> 保存每次移動都必須通過的規則：軟體極限、長距離 XY 移動前 Z 軸須位於安全高度、互鎖已閉合，以及機台不在 Alarm 狀態。機台模型會執行政策要求的動作，例如抬升 Z 軸；其他情況則以指明違反規則的 <code>HardwareException</code> 拒絕。命令的 <code>CanExecute</code> 會詢問同一個政策，因此按鈕被停用的原因，與移動會被拒絕的原因相同。</p>
+
+  <h4>資源</h4>
+  <p class="prose"><code>MachineOperations</code> 分配具名資源：載台、雷射、相機或整個工站。單工站機台以一個資源代表整台機台。有兩個工作台或兩個加工頭的機台，則每個工站宣告一個資源，如此兩個作業就能同時執行，而不需要重新設計。</p>
+  </div>
+
+  <div class="sub" id="platform">
+  <h3><span class="num">2.4</span>Platform</h3>
+  <p class="prose"><code>LTT.Platform</code> 由所有機台共用。它包含使用裝置時所透過的合約，以及其他層賴以建構的小型基礎核心。它不參考任何 UI 框架；共用的 UI 工具組屬於<a href="#views">檢視層</a>。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>區域</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td><b>裝置合約</b></td><td><code>IDevice</code>、<code>IMotionController</code> / <code>IAxis</code>、<code>IDigitalIO</code>、<code>ICamera</code>、<code>IMarkFinder</code>、<code>ILaserSource</code> / <code>ILaserPresets</code>、<code>IMarkingEngine</code>、<code>ILightController</code>、<code>IDistanceSensor</code></td></tr>
+        <tr><td><b>能力介面</b></td><td>選用的廠商功能，以 <code>as</code> 探索：<code>IAnalogInputs</code>、<code>ICommandScriptChannel</code></td></tr>
+        <tr><td><b>裝置執行緒</b></td><td><code>DeviceGate</code>、<code>DeviceWorker</code>，以及供 UI 綁定型裝置使用的 UI 執行緒呼叫器；它建構在 <code>SynchronizationContext</code> 之上，因此不需要任何 UI 框架（見「驅動程式」）</td></tr>
+        <tr><td><b>錯誤</b></td><td><code>HardwareException</code>、<code>HardwareErrorCode</code></td></tr>
+        <tr><td><b>基礎核心</b></td><td><code>IEventBus</code>、<code>ViewModelBase</code>、<code>AsyncCommand</code>、<code>RelayCommand</code>、<code>IDialogService</code>、<code>IOperatorPrompt</code>、<code>MachineOperations</code> 背後的作業執行器</td></tr>
+        <tr><td><b>在地化</b></td><td><code>Loc</code>、字串表、<code>languages.tsv</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h4>合約規則</h4>
+  <ul class="bul">
+    <li>合約與廠商無關。其中不含廠商型別，也不含已翻譯的文字。</li>
+    <li>每個長時間作業都是非同步的，並接受 <code>CancellationToken</code>。取消時先停止硬體，再擲回 <code>OperationCanceledException</code>。</li>
+    <li>事件在驅動程式的執行緒上引發。使用端透過匯流排接收事件。</li>
+    <li>狀態是不可變快照（例如 <code>AxisStatus</code>），以原子方式整個替換，因此讀取端絕不會看到只更新一半的資料。</li>
+    <li>廠商的額外功能做成能力介面，而不是做成讓其他所有驅動程式都得寫空實作的成員。</li>
+    <li>在同一主版本內，變更只能是新增。移除或修改成員意味著 Platform 的新主版本（見<a href="#maintain">維護</a>）。</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="drivers">
+  <h3><span class="num">2.5</span>驅動程式與模擬</h3>
+  <div class="prose">
+    <p>每個裝置都遵循相同的結構。Core 呼叫廠商中立的合約。合約背後的驅動程式決定由哪個執行緒呼叫 SDK，並把 SDK 錯誤轉成單一例外型別。位於同一合約背後的模擬器，則讀寫一個共用的模擬機台。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 560" role="img" aria-label="裝置堆疊。Core 中的作業 await 機台模型；機台模型檢查運動安全政策後，呼叫廠商中立的 IMotionController 合約。此合約由呼叫 SDK 的 A3200 驅動程式實作；模擬時則由 SimMotionController 實作，它把載台位置寫入共用的 SimWorld。SimCamera、SimMarkFinder 與 SimDigitalIO 讀取同一個模擬世界。">
+      <defs>
+        <marker id="d5-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect class="back" x="40" y="20" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="46">ProductionRun · AlignmentService</text>
+      <text class="s" x="60" y="67">Core · 作業 · await 並向下傳遞 CancellationToken</text>
+      <rect class="back" x="40" y="112" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="138">Stage.MoveToAsync</text>
+      <text class="s" x="60" y="159">Core · 機台模型 · 先由 MotionSafetyPolicy 檢查移動</text>
+      <rect class="box" x="40" y="204" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="230">IMotionController</text>
+      <text class="s" x="60" y="251">LTT.Platform · 廠商中立合約，所有機台共用</text>
+      <rect class="box" x="40" y="296" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="322">A3200MotionController</text>
+      <text class="s" x="60" y="343">LTT.Hardware.Aerotech · 執行緒模型：自由執行緒</text>
+      <rect class="box-2" x="40" y="388" width="480" height="60" rx="5"/>
+      <text class="t" x="60" y="414">A3200 SDK</text>
+      <text class="s" x="60" y="435">原生 DLL · x64 · 只在機台上載入</text>
+      <line class="ln" x1="120" y1="80" x2="120" y2="110" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="100">await (ct)</text>
+      <line class="ln" x1="120" y1="172" x2="120" y2="202" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="192">await</text>
+      <line class="ln" x1="120" y1="264" x2="120" y2="294" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="284">由其實作</text>
+      <line class="ln" x1="120" y1="356" x2="120" y2="386" marker-end="url(#d5-ah)"/>
+      <text class="s" x="132" y="376">在背景工作中執行阻塞呼叫；錯誤轉為 HardwareException</text>
+      <polyline class="ln dash" points="520,234 750,234 750,294" marker-end="url(#d5-ah)"/>
+      <text class="s" x="635" y="226" text-anchor="middle">或者，模擬時</text>
+      <rect class="box dash" x="580" y="296" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="322">SimMotionController</text>
+      <text class="s" x="600" y="343">LTT.Hardware.Simulation</text>
+      <rect class="back" x="580" y="388" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="414">SimWorld</text>
+      <text class="s" x="600" y="435">載台位置 · 輸出 · 雷射 · 標記</text>
+      <rect class="box dash" x="580" y="480" width="340" height="60" rx="5"/>
+      <text class="t" x="600" y="506">SimCamera · SimMarkFinder · SimDigitalIO</text>
+      <text class="s" x="600" y="527">繪製標記，推導感測器輸入</text>
+      <line class="ln" x1="750" y1="356" x2="750" y2="386" marker-end="url(#d5-ah)"/>
+      <text class="s" x="762" y="376">寫入位置</text>
+      <line class="ln" x1="750" y1="448" x2="750" y2="478" marker-end="url(#d5-ah)"/>
+      <text class="s" x="762" y="468">被讀取</text>
+    </svg>
+    </div>
+    <figcaption><b>實體與模擬驅動程式位於同一個合約之後，而且只有驅動程式決定執行緒。</b>所有模擬器共用一個 <code>SimWorld</code>。模擬的載台移動會改變相機看到標記的位置，因此對位在筆電上和測試中都能收斂。</figcaption>
+  </figure>
+
+  <h4>四種執行緒模型</h4>
+  <p class="prose">每個驅動程式在其類別註解（remarks）中聲明自己的執行緒模型。需要機制的模型，在 Platform 中都有對應的機制。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>模型</th><th>機制</th><th>適用情況</th><th>範例</th></tr></thead>
+      <tbody>
+        <tr><td><b>UI 綁定型</b></td><td class="proj">UI 呼叫器</td><td>操作員必須使用廠商自己的畫面，因此其控制項顯示在主視窗中</td><td>使用教導畫面與影像顯示時的 AISYS VAlign。適用規則 T8</td></tr>
+        <tr><td><b>擁有者執行緒</b></td><td class="proj">DeviceWorker</td><td>綁定在建立它之執行緒上的 SDK：STA COM 物件、不需要其畫面的 ActiveX 控制項（裝載於隱藏視窗）、具執行緒親和性的原生函式庫</td><td>MarkingMate 控制項、ACS SPiiPlus 等 COM 運動通道、USB 修調引擎函式庫</td></tr>
+        <tr><td><b>序列化</b></td><td class="proj">DeviceGate</td><td>請求／回應式通訊協定，以及非執行緒安全、但可從任意執行緒呼叫的 SDK</td><td>Lumentum 雷射、RS-232 光源控制器、TCP 高度感測器、Googol GTS I/O</td></tr>
+        <tr><td><b>自由執行緒</b></td><td class="proj">無</td><td>具有自己回呼執行緒的執行緒安全 SDK</td><td>Aerotech A3200（在背景工作中執行阻塞式移動，狀態來自診斷回呼）、Basler pylon</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">依據 SDK 手冊中的執行緒安全說明來指定模型，而不是依據「剛好能動」的結果。</p>
+
+  <h4>ActiveX 裝置</h4>
+  <div class="prose">
+    <p>MarkingMate 與 AISYS 都以 ActiveX 形式提供開發者介面。</p>
+    <ul>
+      <li><b>MarkingMate：</b>擁有超過 1,000 個函式的 OCX，是 Eastern Logic 提供的整合途徑。除了 I/O 訊號與選用的 TCP/IP 文字輸入之外，使用手冊未列出其他 API。</li>
+      <li><b>AISYS：</b>VAlign 與其底層的 OVK Framework 都是 ActiveX 元件。VAlign 以完整視覺系統的形式販售，附有自己的操作畫面。它唯一的其他介面是 RS-232 命令，供 PLC 控制的機台使用。</li>
+    </ul>
+    <p>ActiveX 控制項需要三樣東西：單執行緒單元（STA）執行緒、訊息迴圈，以及父視窗。它不需要可見，也不需要應用程式的主 UI 執行緒。因此有兩種裝載方式：</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>裝載方式</th><th>做法</th><th>時機</th></tr></thead>
+      <tbody>
+        <tr><td><b>擁有者執行緒</b>（建議）</td><td>STA 模式的 <code>DeviceWorker</code> 執行自己的訊息迴圈，並把控制項裝載在隱藏表單上。所有呼叫都經由此 worker。</td><td>操作員不需要廠商畫面時，例如 MarkingMate 打標。如需打標檔預覽，由我們自己的檢視根據文件繪製。</td></tr>
+        <tr><td><b>UI 綁定型</b></td><td>控制項放在主視窗的面板中，呼叫會 Post 到 UI 執行緒的 <code>SynchronizationContext</code>。</td><td>操作員使用廠商畫面時，例如 VAlign 教導畫面。適用規則 T8。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li><b>為何建議擁有者執行緒。</b>裝置不再與 UI 共用執行緒，因此忙碌的畫面不會延誤打標，長時間的裝置呼叫也不會凍結畫面。對該裝置而言，規則 T8 所述的重入風險也隨之消失。</li>
+    <li><b>先向廠商確認。</b>把控制項移到擁有者執行緒之前，先向廠商確認驅動程式使用的每個控制項都能在隱藏視窗上運作，然後在機台上執行該裝置的合約測試。已有數個 MarkingMate 控制項在隱藏狀態下使用。OVK 處理模組能否在沒有視窗的情況下運作，目前沒有公開文件說明。</li>
+    <li><b>UI 綁定的情況可以避免。</b>OVK Framework 也提供圖樣比對與對位的處理模組（OvkPat、OvkAlign），且 AISYS 列出支援 .NET Framework 與 .NET 5/6。以這些模組建構的驅動程式可以在沒有廠商畫面的情況下尋找標記，教導則在我們自己的檢視中完成。由於 <code>IMarkFinder</code> 與廠商無關，也可以換用其他視覺函式庫而不必修改 Core。</li>
+    <li><b>驅動程式中不含 UI 工具組。</b>裝載 ActiveX 控制項需要在驅動程式內使用 <code>System.Windows.Forms</code>，以取得 <code>AxHost</code>。驅動程式從不參考 <code>LTT.UI.*</code>。它透過 <code>IHasHardwareView</code> 把廠商畫面交給檢視層，由檢視層決定要放在哪裡。</li>
+  </ul>
+<pre><span class="c">// LTT.Platform：一次一個呼叫。逾時會轉成 HardwareException(Timeout, device)。</span>
+<span class="k">public sealed class</span> DeviceGate
+{
+    <span class="k">public</span> DeviceGate(<span class="k">string</span> device, TimeSpan timeout);
+    <span class="k">public</span> Task&lt;T&gt; RunAsync&lt;T&gt;(Func&lt;CancellationToken, Task&lt;T&gt;&gt; call, CancellationToken ct);
+}
+
+<span class="c">// LTT.Platform：每個呼叫都在建立 SDK 物件的執行緒上執行（STA 會處理訊息）。</span>
+<span class="k">public sealed class</span> DeviceWorker : IDisposable
+{
+    <span class="k">public</span> DeviceWorker(<span class="k">string</span> device, ApartmentState apartment);
+    <span class="k">public</span> Task&lt;T&gt; RunAsync&lt;T&gt;(Func&lt;T&gt; call, CancellationToken ct);
+}</pre>
+  <p class="prose"><strong>先啟動，再等待。</strong>長時間作業（移動、原點復歸、打標）以一個短呼叫開始，然後 await 完成事件或狀態。它們絕不會是 gate 或 worker 上的一個長時間阻塞呼叫，因此 Stop 永遠送得進去。</p>
+
+  <h4>驅動程式規則</h4>
+  <ul class="bul">
+    <li>每個廠商 SDK 一個組件。它參考該 SDK，並把 SDK 的原生 DLL 帶入建置輸出。機台只參考它實際具備之硬體的驅動程式。</li>
+    <li>LTT 自行透過序列埠或 TCP 撰寫、不使用廠商 SDK 的驅動程式，共用 <code>LTT.Hardware.Protocols</code>。</li>
+    <li>每個驅動程式都附有自己的註冊輔助方法，例如 <code>AddA3200Motion(axes)</code>。</li>
+    <li>驅動程式把每個 SDK 錯誤轉成 <code>HardwareException</code>，廠商狀態碼只留在自己內部，且不含任何製程規則。</li>
+    <li>實體驅動程式在標有 <code>[MethodImpl(MethodImplOptions.NoInlining)]</code> 的工廠方法中建立，因此模擬時絕不會載入廠商組件。</li>
+    <li><code>IDevice</code> 有一個 <code>State</code>（Disconnected、Connecting、Ready 或 Faulted）。狀態變更以 <code>DeviceStateChanged</code> 發布到匯流排上，啟動畫面與狀態列都會顯示。</li>
+  </ul>
+
+  <h4>模擬</h4>
+  <ul class="bul">
+    <li>每個合約都有模擬器。每個裝置在 <code>Hardware.ini</code> 中設為 Real 或 Simulated，而 <code>--simulate</code> 會讓所有裝置都改為模擬，因此應用程式可以在未安裝任何廠商 SDK 的筆電上執行。</li>
+    <li>通訊協定驅動程式以真正的程式碼對裝置仿真器執行；Lumentum 仿真器就是其中之一。只有傳輸線路是模擬的。</li>
+    <li><code>SimWorld</code> 保存模擬的機台：
+      <ul>
+        <li>載台位置，由運動模擬器寫入。</li>
+        <li>輸出，以及由輸出推導出的輸入（開啟真空後，真空感測器會在一段延遲後觸發）。</li>
+        <li>雷射狀態，並據此提供功率計讀值。</li>
+        <li>已載入產品的標記位置。</li>
+        <li>故障注入，例如在指定時間打開門。</li>
+      </ul>
+      機台提供一個 <code>SimWorldProfile</code>，說明哪個輸出驅動哪個輸入。</li>
+    <li>若實體雷射或打標引擎搭配模擬的運動或 I/O，啟動程序會拒絕執行。模擬模式會在標題列顯示橫幅，Release 建置則需要加上 <code>--allow-simulation</code>。</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="composition">
+  <h3><span class="num">2.6</span>組合根</h3>
+  <div class="prose">
+    <p>容器採用 <strong>Microsoft.Extensions.DependencyInjection</strong>。它以 .NET Standard 2.0 為目標，因此可在 .NET Framework 上執行，也與 WPF 或 .NET 8 主程式會使用的容器相同。每個組件透過一個 <code>Add…()</code> 擴充方法註冊自己的型別。其類別可以維持 <code>internal</code>，但建構函式必須是 <code>public</code>。</p>
+  </div>
+  <p class="codehead">&lt;Machine&gt;.exe / Program.cs</p>
+<pre>[STAThread]
+<span class="k">static void</span> Main(<span class="k">string</span>[] args)
+{
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(<span class="k">false</span>);
+    SynchronizationContext.SetSynchronizationContext(<span class="k">new</span> WindowsFormsSynchronizationContext());  <span class="c">// 事件匯流排會擷取它</span>
+
+    <span class="k">var</span> startup = HardwareStartup.Load(args);   <span class="c">// 資料根目錄、Hardware.ini、--simulate</span>
+
+    <span class="k">var</span> services = <span class="k">new</span> ServiceCollection()
+        .AddLttPlatform()                                     <span class="c">// 事件匯流排、作業執行器、TimeProvider、日誌</span>
+        .AddMachineHardware(startup.Profile)                  <span class="c">// 每個合約對應實體或模擬裝置</span>
+        .AddMachineCore(startup.Paths)                        <span class="c">// 機台模型、作業、狀態、儲存</span>
+        .AddMachinePresentation()                             <span class="c">// 檢視模型</span>
+        .AddMachineViews();                                   <span class="c">// 主視窗、頁面、對話方塊、日誌面板</span>
+
+    <span class="k">using var</span> provider = services.BuildServiceProvider(validateScopes: <span class="k">true</span>);
+    Application.Run(provider.GetRequiredService&lt;MainShell&gt;());
+}   <span class="c">// 關閉時已執行安全狀態；離開 Main 會處置容器，並依最新建立者優先的順序中斷裝置連線</span></pre>
+
+  <p class="codehead">&lt;Machine&gt;.exe / Composition / HardwareModule.cs（名稱僅供示意）</p>
+<pre><span class="k">internal static class</span> HardwareModule
+{
+    <span class="k">public static</span> IServiceCollection AddMachineHardware(<span class="k">this</span> IServiceCollection s, HardwareProfile hw)
+    {
+        <span class="k">if</span> (hw.Motion == DeviceMode.Real) AddRealMotion(s, hw);
+        <span class="k">else</span> s.AddSimMotion(hw.Axes);                          <span class="c">// 來自 LTT.Hardware.Simulation 的輔助方法</span>
+        <span class="c">// I/O、相機、標記搜尋器、打標引擎、雷射、周邊裝置：相同模式</span>
+        <span class="k">return</span> s;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]   <span class="c">// 模擬時絕不會 JIT 編譯任何廠商型別</span>
+    <span class="k">private static void</span> AddRealMotion(IServiceCollection s, HardwareProfile hw) =&gt; s.AddA3200Motion(hw.Axes);
+}</pre>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>生命週期</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">Singleton</td><td>裝置、機台模型、作業、儲存、事件匯流排、<code>MachineState</code>、<code>AlarmService</code>、主視窗、頁面及其檢視模型。機台只有一台，頁面在整個工作階段中都存在。</td></tr>
+        <tr><td class="proj">Transient</td><td>對話方塊及其檢視模型，透過 <code>IDialogService</code> 建立。</td></tr>
+        <tr><td class="proj">Scoped</td><td>不使用。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li><strong>一次只有一個主程式。</strong>WPF 頁面裝載在 WinForms 視窗內，之後則反過來，因此永遠不會出現第二個 DI 相依圖而產生分歧。如果將來兩個主程式必須並行，先把 <code>Add…()</code> 呼叫移到共用的組合組件中。</li>
+    <li><strong>不使用服務定位器。</strong>只有 <code>Program.cs</code> 與 <code>IDialogService</code> 會從容器解析。其他一切都透過建構函式接收相依項。</li>
+    <li><strong>啟動</strong>是一串有序的 <code>IStartupStep</code>：組態、裝置、校正資料、打標引擎。每個步驟都向啟動畫面回報。失敗會被收集並在最後顯示，只有標記為必要的步驟才會中止啟動。</li>
+    <li><strong>關閉</strong>時會取消執行中的作業，讓機台進入安全狀態，然後處置容器。</li>
+    <li><strong>未處理的例外</strong>會被記錄，並觸發安全狀態。涵蓋 <code>Application.ThreadException</code>、<code>AppDomain.UnhandledException</code> 與 <code>TaskScheduler.UnobservedTaskException</code>。</li>
+  </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-crosscutting">
+  <div class="part-head"><span class="part-no">第 3 部分</span><h2>橫切關注點</h2><p>貫穿每一層的關注點。</p></div>
+
+  <div class="sub" id="threads">
+  <h3><span class="num">3.1</span>執行緒</h3>
+  <div class="prose">
+    <p>執行緒有三種，每種都屬於一個層。UI 執行緒屬於檢視與檢視模型。Core 在執行緒集區上執行，不在乎是哪一條。裝置執行緒屬於各自的驅動程式。</p>
+    <p>顯示給操作員的廠商 ActiveX 控制項（例如 AISYS VAlign）位於 UI 執行緒上，其驅動程式會把每個呼叫封送到那裡。這使得阻塞 UI 執行緒不只是慢，更是危險：等待封送到已被阻塞之 UI 執行緒的驅動程式會發生死結。盡可能把 ActiveX 裝置裝載在自己的擁有者執行緒上（見<a href="#drivers">驅動程式</a>），可讓這種情況很少發生。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 750" role="img" aria-label="生產運行期間跨越三條執行緒的序列。UI 執行緒 await Core 中的運行。Core await 由驅動程式執行的載台移動，然後發布進度，匯流排再把進度 Post 回 UI 執行緒。另外，I/O 輪詢執行緒回報門被打開。Core 暫停運行，狀態變更被 Post 到 UI 執行緒。">
+      <defs>
+        <marker id="d2-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="d2-aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-warm"/></marker>
+      </defs>
+      <rect class="lane-front" x="20"  y="84" width="280" height="656" rx="4"/>
+      <rect class="lane" x="340" y="84" width="280" height="656" rx="4"/>
+      <rect class="lane" x="660" y="84" width="280" height="656" rx="4"/>
+      <rect class="front" x="20" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="160" y="41" text-anchor="middle">UI 執行緒</text>
+      <text class="s" x="160" y="61" text-anchor="middle">從不阻塞 · 執行檢視模型</text>
+      <rect class="back" x="340" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="480" y="41" text-anchor="middle">Core · 執行緒集區</text>
+      <text class="s" x="480" y="61" text-anchor="middle">全程非同步 · 從不封送</text>
+      <rect class="box" x="660" y="16" width="280" height="58" rx="5"/>
+      <text class="t" x="800" y="41" text-anchor="middle">裝置執行緒</text>
+      <text class="s" x="800" y="61" text-anchor="middle">由各驅動程式擁有</text>
+      <line class="ln-faint dash" x1="160" y1="84" x2="160" y2="740"/>
+      <line class="ln-faint dash" x1="480" y1="84" x2="480" y2="740"/>
+      <line class="ln-faint dash" x1="800" y1="84" x2="800" y2="740"/>
+
+      <rect class="box" x="35" y="100" width="250" height="30" rx="4"/><text class="n" x="160" y="120" text-anchor="middle">操作員按下 Start</text>
+      <line class="ln" x1="160" y1="158" x2="478" y2="158" marker-end="url(#d2-ah)"/>
+      <text class="m" x="320" y="151" text-anchor="middle">await run.RunAsync(ct)</text>
+      <rect class="box" x="355" y="186" width="250" height="30" rx="4"/><text class="n" x="480" y="206" text-anchor="middle">檢查互鎖與雷射</text>
+      <line class="ln" x1="480" y1="244" x2="798" y2="244" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="237" text-anchor="middle">await Stage.MoveToAsync(x, y, ct)</text>
+      <rect class="box" x="675" y="272" width="250" height="30" rx="4"/><text class="n" x="800" y="292" text-anchor="middle">A3200 移動，由其驅動程式執行</text>
+      <line class="ln dash" x1="800" y1="330" x2="482" y2="330" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="323" text-anchor="middle">Task 完成</text>
+      <rect class="box" x="355" y="358" width="250" height="30" rx="4"/><text class="n" x="480" y="378" text-anchor="middle">發布 RunProgress（第 2／4 區塊）</text>
+      <line class="ln-warm dash" x1="480" y1="416" x2="162" y2="416" marker-end="url(#d2-aw)"/>
+      <text class="m" x="320" y="409" text-anchor="middle">匯流排 Post 到 UI 執行緒</text>
+      <rect class="box" x="35" y="444" width="250" height="30" rx="4"/><text class="n" x="160" y="464" text-anchor="middle">設定 BlockText；標籤重繪</text>
+
+      <line class="ln-faint" x1="20" y1="500" x2="940" y2="500"/>
+      <text class="s" x="928" y="494" text-anchor="end">同一時間</text>
+
+      <rect class="box" x="675" y="528" width="250" height="30" rx="4"/><text class="n" x="800" y="548" text-anchor="middle">I/O 輪詢執行緒：門被打開</text>
+      <line class="ln" x1="800" y1="586" x2="482" y2="586" marker-end="url(#d2-ah)"/>
+      <text class="m" x="640" y="579" text-anchor="middle">InterlockChanged</text>
+      <rect class="box" x="355" y="614" width="250" height="30" rx="4"/><text class="n" x="480" y="634" text-anchor="middle">運行在下一個檢查點暫停</text>
+      <line class="ln-warm dash" x1="480" y1="672" x2="162" y2="672" marker-end="url(#d2-aw)"/>
+      <text class="m" x="320" y="665" text-anchor="middle">MachineStateChanged(Paused)</text>
+      <rect class="box" x="35" y="700" width="250" height="30" rx="4"/><text class="n" x="160" y="720" text-anchor="middle">顯示 PAUSED 橫幅；Resume 可用</text>
+    </svg>
+    </div>
+    <figcaption><b>沒有任何東西在 UI 執行緒上等待，而且只有匯流排會跨進 UI 執行緒</b>（琥珀色箭頭）。互鎖在不牽涉 UI 執行緒的情況下暫停運行，因此即使畫面忙碌，暫停仍然有效。UI 事後才從狀態變更得知。</figcaption>
+  </figure>
+
+  <h4>執行緒規則</h4>
+  <ol class="rules warm">
+    <li><b>UI 執行緒從不等待。</b>檢視與檢視模型不使用 <code>.Wait()</code>、<code>.Result</code>、<code>Thread.Sleep</code>、<code>Application.DoEvents</code> 或同步的 <code>Invoke</code>。
+      <span class="why">分析器會在建置時強制執行（G3）。</span></li>
+    <li><b>檢視模型的屬性只在 UI 執行緒上變更。</b>匯流排在那裡傳遞事件，檢視模型中 <code>await</code> 之後的程式碼也會在那裡繼續執行。
+      <span class="why">因此檢視模型從不使用 <code>ConfigureAwait(false)</code>。若 <code>PropertyChanged</code> 在其他執行緒上引發，WinForms 繫結會擲回例外。</span></li>
+    <li><b>Core 與驅動程式使用 <code>ConfigureAwait(false)</code>，且從不封送。</b>每個長時間作業都是 <code>async Task</code>，並接受 <code>CancellationToken</code>。檢視層以下沒有 <code>async void</code>。</li>
+    <li><b>取消只有一個擁有者。</b><code>MachineOperations</code> 執行作業並掌管其取消。Stop 會取消目前的作業，致命警報也會。
+      <span class="why">檢視與檢視模型不持有 <code>CancellationTokenSource</code> 欄位。</span></li>
+    <li><b>驅動程式擁有自己的執行緒。</b>每個驅動程式宣告四種執行緒模型之一，並使用對應的 Platform 機制。阻塞式 SDK 呼叫留在驅動程式內部。
+      <span class="why">驅動程式之上的程式碼呼叫它時，從不需要 <code>Task.Run</code>。</span></li>
+    <li><b>連續狀態用拉取，離散事件用推送。</b>軸位置與 I/O 電位是快照，由 UI 計時器每秒讀取 10–20 次。警報、互鎖、進度與狀態變更則走匯流排。
+      <span class="why">這讓高頻率資料不會進入匯流排。對指示燈而言，每次輪詢合併成一次更新就足夠了。</span></li>
+    <li><b>操作員提示是非同步的。</b><code>IOperatorPrompt.AskYesNoAsync(…)</code> 傳回 <code>Task&lt;bool&gt;</code>。主程式 Post 到 UI 執行緒，顯示一個由主視窗擁有的對話方塊，Core 則 await 答案。</li>
+    <li><b>UI 執行緒在處理訊息期間所執行的程式碼中，不呼叫裝置。</b>Paint、計時器與裝置事件處理常式讀取快取的快照，從不呼叫裝置。
+      <span class="why">呼叫 UI 綁定型 ActiveX 控制項，或進行任何 STA COM 呼叫時，等待期間都會處理訊息。佇列中的 paint 或計時器事件可能因此在呼叫中途執行，並再次呼叫同一個裝置。這種重入會使裝置停滯，或破壞其狀態。</span></li>
+  </ol>
+  </div>
+
+  <div class="sub" id="events">
+  <h3><span class="num">3.2</span>事件與機台狀態</h3>
+  <div class="prose">
+    <p>元件在 <code>LTT.Platform</code> 中的小型強型別事件匯流排上宣告事實，而不是彼此直接呼叫，或跨層串接 C# 事件。匯流排在建立時會擷取 UI 的 <code>SynchronizationContext</code>。WPF 也會安裝一個，因此匯流排在 WPF 中不需修改即可運作。</p>
+  </div>
+<pre><span class="k">public interface</span> IEventBus
+{
+    <span class="k">void</span> Publish&lt;TEvent&gt;(TEvent e);
+    IDisposable Subscribe&lt;TEvent&gt;(Action&lt;TEvent&gt; handler, Delivery delivery = Delivery.UiThread);
+}
+<span class="k">public enum</span> Delivery { UiThread, PublisherThread }   <span class="c">// UiThread 使用 Post，從不使用 Send</span></pre>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>事件（不可變、過去式）</th><th>發布者</th><th>典型訂閱者</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">MachineStateChanged</td><td>MachineState</td><td>所有頁面（命令啟用狀態）、狀態列、訊號燈</td></tr>
+        <tr><td class="proj">InterlockChanged</td><td>輸入監視器</td><td>MachineState（暫停）、I/O 頁面</td></tr>
+        <tr><td class="proj">AlarmRaised · AlarmCleared</td><td>AlarmService</td><td>MachineOperations（致命時取消）、警報橫幅、警報歷程</td></tr>
+        <tr><td class="proj">DeviceStateChanged</td><td>各裝置</td><td>啟動畫面、狀態列</td></tr>
+        <tr><td class="proj">RunProgress · RunCompleted</td><td>ProductionRun</td><td>生產頁面、紀錄檢視</td></tr>
+        <tr><td class="proj">LaserStateChanged</td><td>雷射狀態監視器</td><td>雷射頁面、狀態列</td></tr>
+        <tr><td class="proj">ProductLoaded</td><td>產品儲存庫</td><td>產品、對位與校正頁面</td></tr>
+        <tr><td class="proj">OperatorChanged</td><td>存取控制</td><td>主視窗（依角色顯示頁面）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>事件規則</h4>
+  <ol class="rules ev">
+    <li><b>只有一種機制。</b>Core 型別不向其他層公開 C# 事件，也不實作 <code>INotifyPropertyChanged</code>。只有檢視模型會實作。
+      <span class="why">唯一的例外是 <code>Loc.LanguageChanged</code>，它是在地化引擎的一部分。</span></li>
+    <li><b>每次更新只封送一次。</b>匯流排 Post 一次，檢視模型在處理常式中直接設定屬性。</li>
+    <li><b>事實由其擁有者發布。</b>只有事實的擁有者會發布它。事件是過去式的事實，絕不是請求，也絕不是 UI 手勢。</li>
+    <li><b>處理常式之間沒有順序。</b>如果 B 必須在 A 之後執行，就由 A 的擁有者直接呼叫 B，或讓 B 監聽 A 所發布的事件。</li>
+    <li><b>沒有無人訂閱的事件。</b>有一個測試會列出沒有訂閱者的事件型別。擲回例外的處理常式會被記錄，其他處理常式仍會執行。</li>
+  </ol>
+
+  <h4>機台狀態</h4>
+  <p class="prose">Core 中的 <code>MachineState</code> 擁有機台的模式，以及模式之間允許的轉換。每個命令的 <code>CanExecute</code> 都會讀取模式，並與安全政策一起決定操作員在任何時刻能做什麼。</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 300" role="img" aria-label="機台模式。Initializing 進入 Idle。Idle 在手動作業時進入 Busy，完成後返回。Idle 在 Start 時進入 Running，Running 在完成或 Stop 後回到 Idle。Running 在暫停、開門或光幕觸發時進入 Paused，Resume 後返回。Running 與 Paused 會進入 Alarm，確認後回到 Idle。">
+      <defs>
+        <marker id="d4-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      </defs>
+      <rect class="box" x="20" y="128" width="130" height="44" rx="22"/><text class="t" x="85" y="155" text-anchor="middle">Initializing</text>
+      <rect class="box" x="230" y="128" width="130" height="44" rx="22"/><text class="t" x="295" y="155" text-anchor="middle">Idle</text>
+      <rect class="box" x="480" y="28" width="130" height="44" rx="22"/><text class="t" x="545" y="55" text-anchor="middle">Busy</text>
+      <rect class="back" x="480" y="128" width="130" height="44" rx="22"/><text class="t" x="545" y="155" text-anchor="middle">Running</text>
+      <rect class="front" x="760" y="128" width="130" height="44" rx="22"/><text class="t" x="825" y="155" text-anchor="middle">Paused</text>
+      <rect class="alarm" x="480" y="236" width="130" height="44" rx="22"/><text class="t tb" x="545" y="263" text-anchor="middle">Alarm</text>
+      <line class="ln" x1="150" y1="150" x2="228" y2="150" marker-end="url(#d4-ah)"/>
+      <text class="s" x="189" y="142" text-anchor="middle">就緒</text>
+      <line class="ln" x1="360" y1="142" x2="478" y2="142" marker-end="url(#d4-ah)"/>
+      <text class="s" x="419" y="134" text-anchor="middle">Start</text>
+      <line class="ln" x1="480" y1="160" x2="362" y2="160" marker-end="url(#d4-ah)"/>
+      <text class="s" x="421" y="178" text-anchor="middle">完成 · Stop</text>
+      <polyline class="ln" points="320,128 320,50 478,50" marker-start="url(#d4-ah)" marker-end="url(#d4-ah)"/>
+      <text class="s" x="399" y="42" text-anchor="middle">校正、原點復歸、寸動</text>
+      <line class="ln" x1="610" y1="142" x2="758" y2="142" marker-end="url(#d4-ah)"/>
+      <text class="s" x="684" y="134" text-anchor="middle">Pause · 開門 · 光幕</text>
+      <line class="ln" x1="760" y1="160" x2="612" y2="160" marker-end="url(#d4-ah)"/>
+      <text class="s" x="686" y="178" text-anchor="middle">Resume</text>
+      <line class="ln" x1="545" y1="172" x2="545" y2="234" marker-end="url(#d4-ah)"/>
+      <text class="s" x="553" y="208">致命警報</text>
+      <polyline class="ln" points="825,172 825,258 612,258" marker-end="url(#d4-ah)"/>
+      <text class="s" x="718" y="250" text-anchor="middle">致命警報</text>
+      <polyline class="ln" points="480,258 295,258 295,174" marker-end="url(#d4-ah)"/>
+      <text class="s" x="388" y="250" text-anchor="middle">確認</text>
+    </svg>
+    </div>
+    <figcaption><b>六種模式，由單一類別擁有。</b>Busy 涵蓋手動作業：校正、原點復歸、對位與寸動。Busy、Running 與 Paused 遇到致命警報時都會進入 Alarm。在 Paused 時按 Stop 會結束運行並回到 Idle。無效的轉換會被拒絕並記錄，因此按鈕無法啟動機台尚未準備好的動作。</figcaption>
+  </figure>
+
+  <h4>運行也有自己的狀態機</h4>
+  <p class="prose"><code>ProductionRun</code> 保存一次運行的生命週期：Ready、Aligning、Marking（第 <i>i</i>／<i>n</i> 區塊）、Finishing，最後是 Completed、Cancelled 或 Failed。暫停是運行在其檢查點上 await 的一道閘門。此類別發布 <code>RunProgress</code> 與 <code>RunCompleted</code>。它是 Core 中的一般類別，具有受保護的狀態轉換、一個鎖與一個寫入者（運行作業），並經過單元測試。要詢問運行是否進行中，只能問這一個地方。沒有另外的「processing」或「marking」旗標。</p>
+  </div>
+
+  <div class="sub" id="errors">
+  <h3><span class="num">3.3</span>錯誤、警報與安全狀態</h3>
+  <h4>單一錯誤模型</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>情況</th><th>回報方式</th></tr></thead>
+      <tbody>
+        <tr><td>裝置或通訊協定失敗</td><td><code>HardwareException(code, device)</code>。驅動程式轉換每個 SDK 錯誤。UI 把錯誤碼對應到字串表鍵值</td></tr>
+        <tr><td>停止或取消</td><td><code>OperationCanceledException</code>。記錄為取消，絕不記錄為錯誤</td></tr>
+        <tr><td>不屬於失敗的預期結果：找不到標記、功率超出公差、操作員回答「否」</td><td>呼叫端必須檢查的結果值（<code>MarkFindResult</code>、功率檢查結果）</td></tr>
+        <tr><td>必須讓操作員看到的狀況</td><td>警報，透過 <code>AlarmService</code> 引發</td></tr>
+        <tr><td>程式錯誤</td><td>其他任何例外。作業結束，由 <code>MachineOperations</code> 連同堆疊追蹤一起記錄</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">狀態字串、<code>bool</code> 成功值與整數傳回碼不會越過驅動程式向上傳遞。設定檔寫入失敗會被記錄並回報，但絕不會中止執行中的製程。</p>
+
+  <h4>警報</h4>
+  <p class="prose">警報是資料，不是訊息方塊。Core 中的 <code>AlarmService</code> 負責引發、清除與確認警報，警報橫幅、警報歷程、訊號燈與日誌都從它讀取。每個警報記錄：</p>
+  <ul class="bul">
+    <li>代碼，同時也是它的字串表鍵值（例如 <code>Alarm.Motion.Fault</code>）；</li>
+    <li>嚴重程度與來源裝置；</li>
+    <li>引發與清除的時間；</li>
+    <li>確認者。</li>
+  </ul>
+  <p class="prose">警報歷程與生產紀錄存放在一起。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>嚴重程度</th><th>影響</th><th>清除方式</th></tr></thead>
+      <tbody>
+        <tr><td><b>Info</b></td><td>寫入操作員日誌</td><td>無需處理</td></tr>
+        <tr><td><b>Warning</b></td><td>顯示橫幅。作業繼續</td><td>原因消失後自動清除</td></tr>
+        <tr><td><b>Error</b></td><td>顯示橫幅。目前作業失敗</td><td>由操作員確認。在確認之前警報會一直存在，即使原因已消失</td></tr>
+        <tr><td><b>Fatal</b></td><td>機台進入 Alarm 並進入安全狀態</td><td>操作員確認後，機台重置（必要時執行原點復歸）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>安全狀態</h4>
+  <p class="prose">每台機台在 Core 中定義一個 <code>SafeState</code> 程序：停止運動、關閉雷射出光並關閉光閘、停止打標，並把輸出設為安全值。它在致命警報、緊急停止、未處理例外與關閉時執行。每個步驟各自獨立嘗試，因此即使某個裝置已故障，程序仍會盡可能完成其餘步驟。有一個序列測試涵蓋此程序。</p>
+  </div>
+
+  <div class="sub" id="data">
+  <h3><span class="num">3.4</span>資料與組態</h3>
+  <p class="prose">機台讀寫的所有資料都位於單一資料根目錄下，與程式資料夾分開。資料存放在檔案中，絕不存放在登錄檔，因此複製資料根目錄即可備份或複製一台機台。程式資料夾在每次部署時都會被替換，並視為唯讀。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>類別</th><th>範例</th><th>修改者</th><th>規則</th></tr></thead>
+      <tbody>
+        <tr><td><b>出廠預設值</b></td><td>預設組態、校正圖樣</td><td>版本發行</td><td>唯讀。只在檔案不存在時複製到資料根目錄</td></tr>
+        <tr><td><b>機台組態</b></td><td>裝置位址、Real/Simulated 模式、軸對應（<code>Hardware.ini</code>）</td><td>裝機調試</td><td>啟動時驗證。無效的檔案會以清楚的訊息中止啟動</td></tr>
+        <tr><td><b>機台設定</b></td><td>速度、偏移量、軟體極限、安全高度</td><td>工程師</td><td>強型別設定物件。每次變更都會稽核</td></tr>
+        <tr><td><b>校正</b></td><td>振鏡校正表、相機–雷射偏移、視覺範本</td><td>校正作業</td><td>保留前一個檔案作為備份</td></tr>
+        <tr><td><b>產品（配方）</b></td><td>幾何、圖層、標記、雷射參數</td><td>工程師</td><td>運行開始時取得不可變快照</td></tr>
+        <tr><td><b>紀錄與日誌</b></td><td>生產紀錄、警報歷程、日誌</td><td>機台</td><td>只能附加。一律使用英文</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="bul">
+    <li>每個檔案都有一個負責讀寫它的擁有者類別，其他任何東西都不碰該檔案。路徑來自單一 <code>MachinePaths</code> 類別，絕不使用字面值。</li>
+    <li>設定是強型別的，並在載入時驗證。每個預設值只在程式碼中定義一次。</li>
+    <li>每個檔案都帶有結構描述版本，其擁有者在載入舊版本時負責遷移。</li>
+    <li>寫入是原子性的：先寫入暫存檔，再取代舊檔。</li>
+    <li>參數變更會稽核誰、何時、舊值與新值，因此結果的改變可以追溯到設定的改變。</li>
+  </ul>
+  </div>
+
+  <div class="sub" id="diagnostics">
+  <h3><span class="num">3.5</span>日誌與可追溯性</h3>
+  <p class="prose"><strong>目標：</strong>機台上發生的任何事，都能透過軟體追溯回去。這包括操作員看到的警報、生產紀錄中的 NG 品，或是一次當機。追溯的線索會指向執行的作業、它使用的參數、它所做的每一次裝置呼叫，以及失敗的那一行程式碼。沒有任何東西會無聲無息地失敗。</p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg class="dg" viewBox="0 0 960 240" role="img" aria-label="追溯鏈。操作員畫面上的警報與生產紀錄中的一筆資料，都帶有作業 id。以該 id 篩選診斷日誌與當機報告，即可找到失敗的日誌行，以及含有檔案與行號的例外。">
+      <defs><marker id="t-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect class="front" x="20" y="30" width="200" height="64" rx="5"/><text class="t" x="36" y="56">操作員畫面</text><text class="s" x="36" y="78">警報顯示參考編號 A-0428</text>
+      <rect class="front" x="20" y="146" width="200" height="64" rx="5"/><text class="t" x="36" y="172">生產紀錄</text><text class="s" x="36" y="194">NG 品：RunId、序號</text>
+      <rect class="back" x="300" y="88" width="200" height="64" rx="5"/><text class="t" x="316" y="114">OperationId</text><text class="s" x="316" y="136">每一行日誌都帶有此 id</text>
+      <rect class="box" x="590" y="30" width="170" height="64" rx="5"/><text class="t" x="606" y="56">診斷日誌</text><text class="s" x="606" y="78">該作業的每一行日誌</text>
+      <rect class="box" x="590" y="146" width="170" height="64" rx="5"/><text class="t" x="606" y="172">當機報告</text><text class="s" x="606" y="194">最近 2,000 筆事件與狀態</text>
+      <rect class="alarm" x="800" y="88" width="140" height="64" rx="5"/><text class="t" x="816" y="114">例外</text><text class="s" x="816" y="136">含 file:line 的堆疊</text>
+      <polyline class="ln" points="220,62 260,62 260,110 298,110" marker-end="url(#t-ah)"/><text class="s" x="226" y="54">AlarmId</text>
+      <polyline class="ln" points="220,178 260,178 260,130 298,130" marker-end="url(#t-ah)"/><text class="s" x="226" y="198">RunId</text>
+      <polyline class="ln" points="500,110 545,110 545,62 588,62" marker-end="url(#t-ah)"/>
+      <polyline class="ln" points="500,130 545,130 545,178 588,178" marker-end="url(#t-ah)"/>
+      <text class="s" x="505" y="102">篩選</text>
+      <polyline class="ln" points="760,62 870,62 870,86" marker-end="url(#t-ah)"/><text class="s" x="770" y="54">ERR 行</text>
+      <polyline class="ln" points="760,178 870,178 870,154" marker-end="url(#t-ah)"/><text class="s" x="770" y="198">Fatal 項目</text>
+    </svg>
+    </div>
+    <figcaption><b>一個 id 就能把操作員看到的東西，連結到失敗的那一行程式碼。</b>警報與生產紀錄會儲存 OperationId（與 RunId），每一行日誌也都帶有這些 id。支援人員從畫面上或紀錄中的參考編號開始，以該 id 篩選日誌，就能找到含有檔案與行號的例外。</figcaption>
+  </figure>
+
+  <h4>日誌串流</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>串流</th><th>對象</th><th>語言</th><th>內容</th><th>存放位置</th></tr></thead>
+      <tbody>
+        <tr><td><b>操作員日誌</b></td><td>操作員</td><td>UI 語言</td><td>警報、里程碑、提示及其回答</td><td>警報歷程，與生產紀錄存放在一起</td></tr>
+        <tr><td><b>診斷日誌</b></td><td>支援人員、開發人員</td><td>英文、結構化</td><td>所有內容，並帶有下述的關聯 id</td><td><code>Logs\diagnostic-yyyyMMdd.log</code> 與 <code>.clef</code></td></tr>
+        <tr><td><b>稽核日誌</b></td><td>品保、主管</td><td>英文</td><td>登入，以及參數、配方、校正結果與略過旗標的每一次變更：誰、何時、舊值、新值</td><td><code>Logs\audit-yyyyMM.log</code>，只能附加</td></tr>
+        <tr><td><b>裝置追蹤</b></td><td>開發人員</td><td>英文</td><td>原始的裝置命令、回覆與封包。預設關閉</td><td>診斷日誌，Verbose 層級</td></tr>
+        <tr><td><b>當機報告</b></td><td>支援人員</td><td>英文</td><td>完整例外、機台狀態、版本與近期事件</td><td><code>Logs\Crash\</code>，原生當機另有 <code>Logs\Dumps\</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>關聯 id</h4>
+  <p class="prose">這些屬性透過日誌範圍（scope）與擴充器（enricher）附加，因此程式碼從不需要手動把它們加進訊息中。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>屬性</th><th>識別對象</th><th>設定者</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">SessionId</td><td>一次應用程式啟動</td><td>組合根</td></tr>
+        <tr><td class="proj">OperationId</td><td>一個作業：一次運行、一次校正、原點復歸、一次手動移動</td><td><code>MachineOperations</code></td></tr>
+        <tr><td class="proj">RunId</td><td>一次生產運行</td><td><code>ProductionRun</code></td></tr>
+        <tr><td class="proj">PieceId, SerialNumber</td><td>運行中的一個工件或陣列位置</td><td><code>ProductionRun</code></td></tr>
+        <tr><td class="proj">AlarmId</td><td>一次警報發生，以簡短參考編號顯示給操作員</td><td><code>AlarmService</code></td></tr>
+        <tr><td class="proj">Device, Command</td><td>一次裝置呼叫</td><td>驅動程式</td></tr>
+        <tr><td class="proj">User, Role</td><td>登入的人員</td><td>存取控制</td></tr>
+        <tr><td class="proj">ThreadId, SourceContext, MachineName, AppVersion</td><td>每一行</td><td>擴充器</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">錯誤對話方塊與警報會向操作員顯示一個簡短的參考編號，也就是 AlarmId（例如 <code>A-0428</code>）。生產紀錄帶有 RunId 與 OperationId，因此 NG 品可以直接對應到它的日誌行。</p>
+
+  <h4>層級</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>層級</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td><b>Verbose</b></td><td>裝置通訊。預設關閉，可依驅動程式從組態中開啟</td></tr>
+        <tr><td><b>Debug</b></td><td>作業內部的步驟細節：位置、中間值、重試</td></tr>
+        <tr><td><b>Information</b></td><td>作業開始與結束（含參數、耗時與結果）、狀態轉換、警報引發與清除、組態與配方載入、登入</td></tr>
+        <tr><td><b>Warning</b></td><td>可恢復的問題：經重試的逾時、第一次沒找到標記、設定寫入失敗、Warning 警報、緩慢的裝置呼叫</td></tr>
+        <tr><td><b>Error</b></td><td>作業失敗。一律連同例外一起記錄</td></tr>
+        <tr><td><b>Fatal</b></td><td>未處理的例外。隨後進入安全狀態</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">生產機台以 Information 層級記錄。工程師可以在執行期間從工程畫面把層級提高到 Debug，不需要重新啟動；下次啟動時會恢復為 Information。即使在 Information 層級，記憶體中仍會保留所有層級的最近 2,000 筆事件，供當機報告使用。</p>
+
+  <h4>日誌規則</h4>
+  <ol class="rules lg">
+    <li><b>結構化訊息。</b>透過 <code>ILogger&lt;T&gt;</code> 以訊息範本與具名屬性記錄，例如 <code>_log.LogInformation("Moved {Axis} to {Position} mm", axis, pos)</code>，絕不使用字串內插。
+      <span class="why">這些值會保持為可搜尋的欄位。分析器 CA2254 會把非常數範本視為建置錯誤。</span></li>
+    <li><b>每個作業的開始與結束只記錄一次，而且只在一個地方記錄。</b><code>MachineOperations</code> 在開始時記錄名稱、參數與配方檢查碼，在結束時記錄結果與耗時。個別作業不重複記錄。</li>
+    <li><b>每次狀態轉換與警報變更都會記錄。</b>包括機台模式、運行狀態，以及每次警報的引發、清除與確認，並附上 id 與使用者。</li>
+    <li><b>裝置失敗會帶有其上下文。</b>包括裝置、命令、廠商錯誤碼，以及以 SDK 例外作為內部例外的 <code>HardwareException</code>。成功的裝置通訊只在 Verbose 層級記錄。</li>
+    <li><b>例外只記錄一次：在處理它的地方，並附上例外物件。</b>使用 <code>_log.LogError(ex, …)</code>，絕不使用 <code>ex.Message</code>。中間的層不做「記錄後再擲回」。
+      <span class="why">這樣一個例外只會產生一筆含完整堆疊的 Error 項目，而不是五份不完整的副本。</span></li>
+    <li><b>不可無聲地 catch。</b>每個 <code>catch</code> 只能做三件事之一：重新擲回；處理問題並記錄 Warning；或把例外轉成以原始例外為內部例外的 <code>HardwareException</code>。有一個原始碼掃描測試會找出空的 catch 區塊。</li>
+    <li><b>操作員的決定都有紀錄。</b>每個提示及其回答都會記錄，例如「操作員確認在門開啟的情況下啟動」。</li>
+    <li><b>確切知道執行了什麼。</b>載入組態、配方或校正資料時，會記錄檔案、其結構描述版本，以及簡短的 SHA-256 檢查碼。生產紀錄也會儲存配方檢查碼。</li>
+    <li><b>不含機密。</b>密碼絕不出現在任何日誌中，個人資料只以登入名稱的形式出現。</li>
+    <li><b>日誌記錄絕不讓機台停下。</b>輸出端（sink）都是非同步的；失敗的輸出端會被回報，但絕不會阻塞機台程式碼，也不會向其擲回例外。</li>
+  </ol>
+
+  <h4>儲存與保存</h4>
+  <ul class="bul">
+    <li><b>同一批事件的兩種格式。</b>文字檔（<code>diagnostic-yyyyMMdd.log</code>）供人閱讀。精簡 JSON 檔（<code>.clef</code>）供 Seq、jq 或試算表匯入等工具使用。每天或檔案達到 200 MB 時會開始一個新檔案。</li>
+    <li><b>保存期限：</b>
+      <ul>
+        <li>診斷日誌：180 天；</li>
+        <li>當機報告與傾印檔：一年；</li>
+        <li>稽核日誌、警報歷程與生產紀錄：應用程式絕不刪除。</li>
+      </ul></li>
+    <li><b>時間戳記</b>使用本地時間，包含毫秒與 UTC 偏移。機台時鐘在裝機調試時設定 NTP 同步，因此機台、MES 與其他設備的日誌可以對齊。</li>
+    <li><b>磁碟空間</b>在啟動時及每小時檢查一次。低於門檻時會引發 Warning 警報，因此日誌絕不會在無人察覺的情況下塞滿資料磁碟。</li>
+    <li><b>支援資料包：</b>一個命令即可把近期日誌、當機報告、稽核日誌、警報歷程、組態與版本資訊壓縮成 zip 檔。</li>
+  </ul>
+
+  <h4>在 <code>ILogger&lt;T&gt;</code> 背後使用 Serilog</h4>
+  <p class="prose">Core、Presentation、Platform 與驅動程式只參考 <code>Microsoft.Extensions.Logging.Abstractions</code>，絕不參考 Serilog。主程式在組合根中設定 Serilog 一次。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>套件</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">Serilog, Serilog.Extensions.Logging</td><td>記錄器本身，連接到 <code>ILogger&lt;T&gt;</code> 與 DI 容器</td></tr>
+        <tr><td class="proj">Serilog.Sinks.File, Serilog.Sinks.Async</td><td>每日日誌檔，在呼叫端執行緒以外寫入</td></tr>
+        <tr><td class="proj">Serilog.Formatting.Compact</td><td><code>.clef</code> JSON 格式</td></tr>
+        <tr><td class="proj">Serilog.Exceptions</td><td>把例外屬性變成可搜尋的欄位：<code>HardwareException</code> 的錯誤碼與裝置、內部例外與彙總例外</td></tr>
+        <tr><td class="proj">Serilog.Enrichers.Thread, Serilog.Enrichers.Environment</td><td>每一行都帶有執行緒 id 與電腦名稱</td></tr>
+        <tr><td class="proj">Serilog.Sinks.Seq <span class="tag">選用</span></td><td>在開發或支援電腦上即時搜尋日誌</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="codehead">&lt;Machine&gt;.exe / Composition / LoggingModule.cs</p>
+<pre><span class="k">var</span> level = <span class="k">new</span> LoggingLevelSwitch(LogEventLevel.Information);    <span class="c">// 可從工程畫面提高到 Debug</span>
+
+Log.Logger = <span class="k">new</span> LoggerConfiguration()
+    .MinimumLevel.ControlledBy(level)
+    .MinimumLevel.Override(<span class="k">"LTT.Hardware"</span>, LogEventLevel.Warning)   <span class="c">// 除非啟用，否則關閉裝置追蹤</span>
+    .Enrich.FromLogContext()                                         <span class="c">// 從日誌範圍取得 OperationId、RunId、Device、User</span>
+    .Enrich.WithThreadId()
+    .Enrich.WithMachineName()
+    .Enrich.WithExceptionDetails()
+    .Enrich.WithProperty(<span class="k">"SessionId"</span>, sessionId)
+    .Enrich.WithProperty(<span class="k">"AppVersion"</span>, appVersion)
+    .WriteTo.Async(a =&gt; a.File(logs + <span class="k">"\\diagnostic-.log"</span>,
+        rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 200_000_000, rollOnFileSizeLimit: <span class="k">true</span>,
+        outputTemplate: <span class="k">"{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] (T{ThreadId}) {OperationId} {SourceContext}: {Message:lj}{NewLine}{Exception}"</span>))
+    .WriteTo.Async(a =&gt; a.File(<span class="k">new</span> CompactJsonFormatter(), logs + <span class="k">"\\diagnostic-.clef"</span>,
+        rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 200_000_000, rollOnFileSizeLimit: <span class="k">true</span>))
+    .WriteTo.Sink(recentEvents, LogEventLevel.Verbose)               <span class="c">// 最近 2,000 筆事件的環形緩衝區，供當機報告使用</span>
+    .CreateLogger();
+
+services.AddLogging(b =&gt; b.AddSerilog(dispose: <span class="k">true</span>));   <span class="c">// 關閉時排清</span></pre>
+  <p class="prose">環形緩衝區會接收所有層級，因此上面的 <code>MinimumLevel</code> 只套用於檔案。刪除超過保存期限的檔案由一個小型啟動工作負責，因為 <code>retainedFileCountLimit</code> 計算的是檔案數，而不是天數。</p>
+
+  <p class="codehead">LTT.&lt;Machine&gt;.Core / Operations / MachineOperations.cs：作業開始、結束與失敗的唯一位置</p>
+<pre><span class="k">using</span> (_log.BeginScope(<span class="k">new</span> Dictionary&lt;<span class="k">string</span>, <span class="k">object</span>&gt; { [<span class="k">"OperationId"</span>] = op.Id, [<span class="k">"Operation"</span>] = op.Name }))
+{
+    _log.LogInformation(<span class="k">"{Operation} started {@Parameters}"</span>, op.Name, op.Parameters);
+    <span class="k">var</span> started = _time.GetTimestamp();
+    <span class="k">try</span>
+    {
+        <span class="k">await</span> op.RunAsync(ct).ConfigureAwait(<span class="k">false</span>);
+        _log.LogInformation(<span class="k">"{Operation} completed in {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+    }
+    <span class="k">catch</span> (OperationCanceledException)
+    {
+        _log.LogInformation(<span class="k">"{Operation} cancelled after {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+        <span class="k">throw</span>;
+    }
+    <span class="k">catch</span> (Exception ex)
+    {
+        _log.LogError(ex, <span class="k">"{Operation} failed after {Elapsed}"</span>, op.Name, _time.GetElapsedTime(started));
+        _alarms.Raise(AlarmCodes.OperationFailed, ex);                <span class="c">// 警報會保留這個 OperationId</span>
+        <span class="k">throw</span>;
+    }
+}</pre>
+
+  <p class="codehead">Logs\diagnostic-20260928.log（範例）</p>
+<pre>2026-09-28 14:03:12.418 +08:00 [INF] (T9)  7F3A LTT.&lt;Machine&gt;.Operations.MachineOperations: ProductionRun started {"Recipe":"PANEL-231","RecipeSha":"9c41e2d0"}
+2026-09-28 14:03:15.902 +08:00 [ERR] (T14) 7F3A LTT.&lt;Machine&gt;.Operations.MachineOperations: ProductionRun failed after 00:00:03.484
+LTT.Hardware.HardwareException: Following error on axis X (Device=MotionController, Code=DeviceFault, Vendor=A3200 0x1802)
+   at LTT.Hardware.Aerotech.A3200MotionController.MoveLinearAsync(...) in A3200MotionController.cs:line 212
+   at LTT.&lt;Machine&gt;.Machine.Stage.MoveToAsync(...) in Stage.cs:line 88
+   at LTT.&lt;Machine&gt;.Production.ProductionRun.RunAsync(...) in ProductionRun.cs:line 141
+2026-09-28 14:03:15.905 +08:00 [WRN] (T14) 7F3A LTT.&lt;Machine&gt;.State.AlarmService: Alarm A-0428 OperationFailed raised (Error)</pre>
+  </div>
+
+  <div class="sub" id="crashes">
+  <h3><span class="num">3.6</span>例外、當機與無回應</h3>
+  <p class="prose">每一次失敗，無論是否被處理，都必須留下完整的堆疊追蹤，以及足夠的上下文，讓人不必在機台上重現就能解釋原因。</p>
+
+  <h4>保留堆疊追蹤</h4>
+  <ul class="bul">
+    <li><b>隨附 PDB 檔。</b>Release 建置產生可攜式 PDB（<code>&lt;DebugType&gt;portable&lt;/DebugType&gt;</code>），並部署在每個組件旁邊。堆疊追蹤因此包含檔名與行號；.NET Framework 從 4.7.2 版起可為此讀取可攜式 PDB。</li>
+    <li><b>正確地重新擲回。</b>使用 <code>throw;</code>，絕不使用會丟棄原始堆疊的 <code>throw ex;</code>。包裝例外時，把原始例外作為 <code>InnerException</code> 傳入。要在另一個執行緒上重新擲回，使用 <code>ExceptionDispatchInfo.Capture(ex).Throw()</code>。</li>
+    <li><b>保留廠商的細節。</b>驅動程式把 SDK 錯誤轉成帶有裝置、命令與廠商錯誤碼的 <code>HardwareException</code>，並以 SDK 例外作為內部例外，讓廠商自己的訊息與堆疊得以保留。</li>
+    <li><b>例外變成欄位。</b><code>Serilog.Exceptions</code> 會把例外屬性、內部例外與 <code>AggregateException</code> 的子例外寫成結構化欄位，使其在 <code>.clef</code> 日誌中可以搜尋。</li>
+  </ul>
+
+  <h4>未處理的例外</h4>
+  <ol class="steps">
+    <li><b>最先安裝處理常式，</b>在 <code>Program.Main</code> 中、建置容器之前：<code>AppDomain.UnhandledException</code>、<code>Application.ThreadException</code> 與 <code>TaskScheduler.UnobservedTaskException</code>。</li>
+    <li><b>以 Fatal 層級記錄</b>完整的例外。</li>
+    <li><b>寫入當機報告</b>至 <code>Logs\Crash\crash-yyyyMMdd-HHmmss.txt</code>。內容包括：
+      <ul>
+        <li>含完整堆疊的例外；</li>
+        <li>SessionId，以及目前的 OperationId 與 RunId；</li>
+        <li>機台與運行狀態；</li>
+        <li>應用程式、驅動程式與 SDK 版本，以及硬體設定檔；</li>
+        <li>環形緩衝區中所有層級的最近 2,000 筆日誌事件。</li>
+      </ul></li>
+    <li><b>執行安全狀態，</b>然後排清日誌（<code>Log.CloseAndFlush()</code>）。</li>
+    <li><b>通知操作員並關閉。</b>操作員會看到一則附有當機報告參考編號的訊息。接著應用程式關閉，因為未處理的例外會讓它處於未知狀態。下一次啟動畫面會顯示上一次當機的參考編號。</li>
+  </ol>
+
+  <h4>原生當機與無回應</h4>
+  <ul class="bul">
+    <li><b>為廠商 DLL 產生傾印檔。</b>原生廠商程式碼內的當機（存取違規）可能在任何 .NET 處理常式執行之前就結束處理程序。因此，裝機調試時會為應用程式開啟 Windows 錯誤報告的本機傾印：<code>HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\&lt;Machine&gt;.exe</code>，並將 <code>DumpFolder</code> 設為 <code>&lt;data root&gt;\Logs\Dumps</code>、<code>DumpType=2</code>（完整傾印）、<code>DumpCount=5</code>。傾印檔可以搭配 PDB 在 Visual Studio 或 WinDbg 中開啟。</li>
+    <li><b>UI 看門狗。</b>一個背景計時器每秒 Post 一次心跳到 UI 執行緒。若心跳等待超過 5 秒，看門狗會記錄一筆 Warning，指出目前的作業與最後一次裝置呼叫。超過 30 秒時，它會把處理程序傾印（<code>MiniDumpWriteDump</code>）寫入 <code>Logs\Dumps</code>，從中可以看出每條執行緒卡在哪裡。</li>
+    <li><b>緩慢的裝置呼叫。</b>當呼叫時間超過預期時，<code>DeviceGate</code> 與 <code>DeviceWorker</code> 會記錄一筆 Warning，指出裝置與命令。卡住的 SDK 呼叫在演變成無回應之前就會被發現。</li>
+  </ul>
+
+  <h4>驗證可追溯性</h4>
+  <ul class="bul">
+    <li>一個使用記錄型記錄器的序列測試，檢查每個作業都以其 OperationId 記錄開始與結束。</li>
+    <li>一個故障注入測試讓模擬驅動程式擲回例外，接著檢查是否剛好有一行含例外與堆疊的 Error、一個 OperationId 相同的警報，以及一筆帶有 RunId 的 NG 紀錄。</li>
+    <li>一個測試引發未處理的例外，並檢查當機報告已寫入、安全狀態已執行。</li>
+    <li>防護機制：CA2254 是建置錯誤，原始碼掃描遇到空的 <code>catch</code> 區塊與 <code>throw ex;</code> 時會失敗。</li>
+  </ul>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-quality">
+  <div class="part-head"><span class="part-no">第 4 部分</span><h2>品質</h2><p>架構在變動中如何保持正確：測試、自動檢查與維護規則。</p></div>
+
+  <div class="sub" id="testing">
+  <h3><span class="num">4.1</span>測試</h3>
+  <p class="prose">各層的設計讓幾乎所有東西都能在沒有機台的情況下測試。測試分為三種。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>種類</th><th>涵蓋範圍</th><th>執行時機</th></tr></thead>
+      <tbody>
+        <tr><td><b>單元</b></td><td>隔離測試單一類別：狀態機、政策、計算、檢視模型，以及針對裝置仿真器的驅動程式通訊協定編碼</td><td>每次建置</td></tr>
+        <tr><td><b>裝置合約</b></td><td>每個裝置合約一套共用測試，分別對模擬器與實體驅動程式執行</td><td>模擬器：每次建置。實體驅動程式：在機台上</td></tr>
+        <tr><td><b>序列</b></td><td>透過機台測試夾具在模擬器上執行完整作業。對於生產路徑的變更，運行產生的生產紀錄必須與前一版建置的相符</td><td>每次建置</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">架構檢查（相依性、執行緒分析器、棘輪）請見 <a href="#guards">4.2 防護機制</a>。在機台上，先執行裝置合約測試，再執行裝機調試檢查表。</p>
+
+  <h4>裝置合約測試讓模擬器保持誠實</h4>
+  <p class="prose">每個合約有一個抽象測試類別，說明每個實作都必須做到什麼。模擬器的子類別在每次建置時執行，實體驅動程式的子類別在機台上執行。如此一來，偏離實體裝置行為的模擬器會讓測試失敗，而不是讓序列測試因為錯誤的理由通過。</p>
+<pre><span class="k">public abstract class</span> MotionControllerContract
+{
+    <span class="k">protected abstract</span> IMotionController Create();
+
+    [TestMethod] <span class="k">public async</span> Task Move_completes_in_position() { … }
+    [TestMethod] <span class="k">public async</span> Task Cancel_aborts_the_move_and_throws() { … }
+    [TestMethod] <span class="k">public async</span> Task Move_beyond_soft_limit_is_rejected() { … }
+}
+
+[TestClass] <span class="k">public class</span> SimMotionControllerTests : MotionControllerContract { … }
+[TestClass, TestCategory(<span class="k">"Hardware"</span>)] <span class="k">public class</span> A3200MotionControllerTests : MotionControllerContract { … }</pre>
+
+  <h4>虛擬時間</h4>
+  <p class="prose">延遲、逾時、輪詢間隔與模擬運動都從 <code>TimeProvider</code> 讀取時間。在 .NET Framework 上它來自 <code>Microsoft.Bcl.TimeProvider</code> 套件；.NET 8 則已內建。測試使用 <code>FakeTimeProvider</code> 明確地推進時間。這樣一次完整的生產運行在測試中只需幾秒，而且每次都以相同方式執行。檢視層以下沒有任何程式碼直接呼叫 <code>Thread.Sleep</code> 或 <code>DateTime.Now</code>。</p>
+
+  <h4>機台測試夾具</h4>
+  <p class="prose">一個測試輔助類別在模擬器之上建立真正的 Core 服務。它使用暫存的資料根目錄、記錄型記錄器與腳本化的操作員提示，並以與組合根相同的 <code>Add…()</code> 輔助方法串接。序列測試與檢視模型測試共用它。</p>
+  </div>
+
+  <div class="sub" id="guards">
+  <h3><span class="num">4.2</span>防護機制</h3>
+  <p class="prose">規則只有在「違反它就會讓建置失敗」時才守得住。以下檢查可防止架構逐漸腐化。</p>
+  <ol class="rules gr">
+    <li><b>用測試，不用腳本。</b>每項檢查都是在一般建置中執行的 MSTest 測試或分析器。</li>
+    <li><b>不可空洞地通過。</b>每個原始碼掃描都會斷言自己有找到檔案。掃描到零個檔案即視為失敗。</li>
+    <li><b>執行緒分析器。</b><code>Microsoft.VisualStudio.Threading.Analyzers</code> 會抓出 <code>async void</code>、同步等待與被遺忘的工作。CA2007 要求 Core、Platform 與驅動程式使用 <code>ConfigureAwait(false)</code>。兩者都是建置錯誤。</li>
+    <li><b>邊界測試。</b><a href="#assemblies">1.3 組件與相依性</a>中的相依表，會針對編譯後的組件進行檢查。驅動程式不得呼叫 <code>Loc</code>。</li>
+    <li><b>棘輪只降不升。</b>檢視與檢視模型中的舊式寫法（<code>async void</code>、<code>Task.Run</code>、<code>.Enabled =</code>、<code>MessageBox.Show</code>、<code>Invoke(</code>）會被計數，尚未啟用可為 Null 參考型別的檔案也一樣。每個檢視模型的建構函式參數數量都有上限。移除程式碼的 pull request 會同時調降基準值。要提高基準值，必須在審查中說明理由。</li>
+    <li><b>容器可以建置。</b>有一個測試在模擬模式下建置容器，並解析主視窗與每個頁面。</li>
+    <li><b>生產路徑變更時比對生產紀錄。</b>請見 <a href="#testing">4.1 測試</a>中的序列測試。</li>
+    <li><b>日誌檢查。</b>CA2254（常數訊息範本）是建置錯誤。原始碼掃描遇到空的 <code>catch</code> 區塊與 <code>throw ex;</code> 時會失敗。請見 3.5 與 3.6。</li>
+    <li><b>數字放在測試中，而不是文件中。</b>文件描述規則與決策。會變動的計數放在棘輪測試中。</li>
+  </ol>
+  <p class="prose">每次推送都會建置方案，並在模擬環境中執行 <code>Hardware</code> 類別以外的所有測試。</p>
+  </div>
+
+  <div class="sub" id="maintain">
+  <h3><span class="num">4.3</span>維護與版本管理</h3>
+  <ul class="bul">
+    <li><strong>套件。</strong>一旦有第二台機台使用，Platform 與驅動程式就移到自己的儲存庫，成為內部 NuGet 來源上具版本的套件。每台機台固定自己使用的版本。在同一主版本內，合約變更只能是新增。</li>
+    <li><strong>專案檔。</strong>所有專案都是 SDK 樣式。<code>Directory.Build.props</code> 保存共用屬性。中央套件管理（<code>Directory.Packages.props</code>）讓每個組件使用相同的套件版本。</li>
+    <li><strong>執行環境。</strong>只要廠商 SDK 仍有需要，主程式與驅動程式就維持在 .NET Framework（4.7.2 或更新版本）。與 UI 無關的組件（Platform、Core、Presentation）以 .NET Standard 2.0 為目標，因此在 SDK 允許時，不需修改即可移到 .NET 8。</li>
+    <li><strong>語言。</strong><code>Directory.Build.props</code> 為每個組件把 <code>LangVersion</code> 設為 <code>12</code>、<code>Nullable</code> 設為 <code>enable</code>。原始碼產生器 <a href="https://github.com/Sergio0694/PolySharp">PolySharp</a> 會補上 .NET Framework 缺少的屬性（attribute），以支援 record、<code>init</code>、<code>required</code>、索引與範圍，以及可為 Null 的註釋。
+      <ul>
+        <li><b>可自由使用：</b>record、<code>init</code>、<code>required</code> 成員、switch 運算式與模式比對、檔案範圍命名空間、全域 using、主要建構函式、集合運算式。</li>
+        <li><b>.NET Framework 上無法使用</b>（需要執行階段支援）：預設介面成員、靜態抽象介面成員、共變數傳回型別。</li>
+        <li><b>可為 Null 的警告</b>在 Platform 與新組件中視為錯誤。既有程式碼在被修改時逐檔開啟（<code>#nullable enable</code>），並由一個棘輪（G5）計算尚未開啟的檔案數。</li>
+        <li><b>調升固定的語言版本</b>至 C# 13 或 14 只需修改一行，待所有開發人員與建置伺服器都使用支援的工具鏈後再進行。</li>
+      </ul></li>
+    <li><strong>決策紀錄。</strong>每項架構決策都在儲存庫中有一份簡短的 ADR（<code>docs/adr/NNNN-title.md</code>），記錄其理由與替代方案。本文只陳述結果。</li>
+    <li><strong>每個組件一份 README，</strong>說明其用途、可以參考什麼，以及如何測試。</li>
+    <li><strong>變更紀律。</strong>每次提交都必須能建置、通過所有測試，並能在模擬模式下啟動。行為變更放在獨立的提交中，並列出以便在機台上驗證。重構提交不改變行為。</li>
+  </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-evolution">
+  <div class="part-head"><span class="part-no">第 5 部分</span><h2>演進</h2><p>將本架構用於新機台，以及把前端轉移到 WPF。</p></div>
+
+  <div class="sub" id="newmachine">
+  <h3><span class="num">5.1</span>建置新機台</h3>
+  <div class="two">
+    <div class="panel">
+      <h4>直接重用</h4>
+      <ul>
+        <li><code>LTT.Platform</code>：合約、裝置執行緒、匯流排、命令、在地化</li>
+        <li><code>LTT.UI.WinForms</code>：<code>LocUi</code>、<code>JogPad</code>、繫結輔助方法、裝置面板</li>
+        <li>與其他機台共用之硬體的驅動程式，包括 <code>Protocols</code></li>
+        <li><code>LTT.Hardware.Simulation</code> 與 <code>SimWorld</code>，讓機台從第一天起就能在筆電上執行</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>為該機台撰寫</h4>
+      <ul>
+        <li><code>LTT.&lt;Machine&gt;.Core</code>：機台模型、安全政策、安全狀態、作業、儲存</li>
+        <li><code>LTT.&lt;Machine&gt;.Presentation</code>：檢視模型</li>
+        <li><code>&lt;Machine&gt;.exe</code>：檢視與組合根</li>
+        <li><code>LTT.&lt;Machine&gt;.Tests</code> 與一個 <code>SimWorldProfile</code></li>
+      </ul>
+    </div>
+  </div>
+  <ol class="steps">
+    <li><span class="h">從範本開始</span><span class="meta">四個機台組件、<code>Program.cs</code>、資料根目錄結構</span><p>在撰寫任何機台程式碼之前，所有東西都能建置並在模擬模式下啟動。</p></li>
+    <li><span class="h">描述硬體</span><span class="meta"><code>Hardware.ini</code>、驅動程式參考</span><p>缺少的硬體需要一個實作既有合約的新 <code>LTT.Hardware.&lt;Vendor&gt;</code> 驅動程式、一個模擬器，以及合約測試。只有新的裝置種類才新增合約。</p></li>
+    <li><span class="h">為機台建立模型</span><span class="meta">軸、訊號、工站、安全政策、安全狀態</span><p>還有 <code>SimWorldProfile</code>，讓模擬的行為與這台機台一致。</p></li>
+    <li><span class="h">撰寫作業</span><span class="meta">搭配在模擬中執行的序列測試</span><p>每段流程都先在筆電上從頭到尾跑過，才在機台上執行。</p></li>
+    <li><span class="h">先寫檢視模型，再寫檢視</span><span class="meta">先寫檢視模型測試</span><p>檢視保持精簡，一眼就能審查完畢。</p></li>
+    <li><span class="h">裝機調試</span><span class="meta">在機台上</span><p>執行 <code>Hardware</code> 合約測試，然後執行裝機調試檢查表。</p></li>
+  </ol>
+  </div>
+
+  <div class="sub" id="wpf">
+  <h3><span class="num">5.2</span>WPF 遷移路徑</h3>
+  <p class="prose">導入 WPF 時，檢視層以下的一切都不會改變。遷移逐頁進行，每一步完成後應用程式都可以出貨。</p>
+  <ol class="steps">
+    <li><span class="h">每個頁面都有檢視模型</span><span class="meta">前提條件</span><p>WinForms 檢視繫結到這些檢視模型。之後的所有步驟都依賴這一點。</p></li>
+    <li><span class="h">新增 LTT.UI.Wpf</span><span class="meta">一個組件</span><p><code>JogPad</code> 與裝置面板的 WPF 版本，以及與 <code>LocUi</code> 對應的字型輔助方法（每種語言的字型家族來自 <code>languages.tsv</code>）。事件匯流排與命令在 WPF 中已可運作。</p></li>
+    <li><span class="h">在 WinForms 視窗中裝載 WPF 頁面</span><span class="meta">ElementHost，一次一頁</span><p>每個遷移的頁面都在同一個檢視模型之上建立 XAML 檢視。操作員自始至終看到的都是同一個應用程式。</p></li>
+    <li><span class="h">把主視窗切換為 WPF</span><span class="meta">其餘部分使用 WindowsFormsHost</span><p>尚未遷移的頁面，以及操作員使用的任何廠商畫面，都裝載在 <code>WindowsFormsHost</code> 中。位於擁有者執行緒上的控制項不受影響，因為它們從不顯示。</p></li>
+    <li><span class="h">.NET 8（另行決定）</span><span class="meta">選用</span><p>與 UI 無關的組件已經是 .NET Standard 2.0。請先在 .NET 8 x64 上檢查每個廠商 SDK；原生 SDK 與 ActiveX 控制項是主要風險。</p></li>
+  </ol>
+  <div class="callout warm">
+    <p><strong>已知的 WPF 限制：</strong>裝載在 WPF 中的 WinForms 內容永遠繪製在最上層（即「airspace」問題）。請為 AISYS VAlign 等廠商畫面保留獨立區域，其上方不要有 WPF 快顯視窗或覆蓋層。</p>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="part" id="part-decisions">
+  <div class="part-head"><span class="part-no">第 6 部分</span><h2>歷程</h2><p>本文的變更紀錄。</p></div>
+
+  <div class="sub" id="history">
+  <h3><span class="num">6.1</span>修訂紀錄</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>版本</th><th>日期</th><th>變更</th></tr></thead>
+      <tbody>
+        <tr><td class="proj">v1</td><td>2026/09/24</td><td>初稿：四個層、MVVM 前端、DI、執行緒規則、事件匯流排與機台狀態、WPF 遷移路徑。</td></tr>
+        <tr><td class="proj">v2</td><td>2026/09/25</td><td>審查一套既有機台程式碼之後：裝置執行緒模型、<code>DeviceGate</code> 與 <code>DeviceWorker</code>、單一錯誤模型、運動安全政策、<code>SimWorld</code>、運行狀態機、事件規則、規則 T8、防護機制。</td></tr>
+        <tr><td class="proj">v2.1</td><td>2026/09/25</td><td>決策 D1–D4 達成共識。</td></tr>
+        <tr><td class="proj">v3</td><td>2026/09/25</td><td>與任何特定機台脫鉤：關於特定機台及其現有程式碼的內容，移至該機台自己的文件。依層重新組織。新增：
+          <ul>
+            <li>組件相依表；</li>
+            <li>錯誤、警報與安全狀態；</li>
+            <li>資料與組態；</li>
+            <li>日誌與診斷；</li>
+            <li>含合約測試與虛擬時間的測試策略；</li>
+            <li>維護與版本管理；</li>
+            <li>執行緒分析器；</li>
+            <li>多工站機台的資源；</li>
+            <li>決策 D5–D10 與待決問題 O1–O2。</li>
+          </ul></td></tr>
+        <tr><td class="proj">v3.1</td><td>2026/09/25</td><td>O1 與 O2 已解決。D11：C# 12，固定版本，搭配可為 Null 參考型別與 PolySharp（已同意日後升級至較新版本）。D12：在 <code>ILogger&lt;T&gt;</code> 背後使用 Serilog，並列出其套件與設定。程式碼範例更新為 C# 12。</td></tr>
+        <tr><td class="proj">v3.2</td><td>2026/09/25</td><td>共用 UI 組件更名為 <code>LTT.UI.WinForms</code> / <code>LTT.UI.Wpf</code>，並歸屬於檢視層（D13）。Platform 不參考任何 UI 框架，其 UI 執行緒呼叫器建構在 <code>SynchronizationContext</code> 之上。根據廠商研究新增 ActiveX 裝載指引：建議使用搭配隱藏視窗的擁有者執行緒，僅在需要廠商畫面時才使用 UI 綁定型（D14）。驅動程式不再參考任何 UI 組件。</td></tr>
+        <tr><td class="proj">v3.3</td><td>2026/09/25</td><td>重新組織為六個部分（概觀、各層、橫切關注點、品質、演進、決策與歷程），並加入編號子章節與目錄區塊。內容未變更。</td></tr>
+        <tr><td class="proj">v3.4</td><td>2026/09/25</td><td>在相依表中把 <code>LTT.UI.WinForms</code> 移到 exe 旁邊，因為它屬於檢視層。移除「取捨」與「決策」章節；決策改以 ADR 形式保存在儲存庫中。測試精簡為三種：單元、裝置合約、序列。</td></tr>
+        <tr><td class="proj">v3.5</td><td>2026/09/28</td><td>為達成完整可追溯性而制定日誌規格。3.5 更名為「日誌與可追溯性」，並新增：包含稽核日誌在內的日誌串流；關聯 id；層級政策；日誌規則 L1–L10；儲存與保存；更新後的 Serilog 設定；作業日誌程式碼與日誌範例。新的 3.6「例外、當機與無回應」涵蓋 PDB 部署、重新擲回規則、搭配環形緩衝區的當機報告、原生當機傾印、UI 看門狗與可追溯性測試。新增一項日誌防護機制。</td></tr>
+        <tr><td class="proj">v3.6</td><td>2026/09/28</td><td>診斷日誌保存期限提高為 180 天，日誌檔改為達到 200 MB 時換檔。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+</section>
+
+
+<footer>
+  程式碼範例使用 C# 12（D11），其中的名稱僅供示意。
+</footer>
+
+</div>
